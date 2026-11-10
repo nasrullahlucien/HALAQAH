@@ -3,9 +3,10 @@ import { initialMockData } from '../data/mockData';
 
 const STORAGE_KEY = 'halaqah_data_cache';
 const API_URL_KEY = 'halaqah_api_url';
+export const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxuae5DUtmkkxOog5HR4d3BhyOLWQ1H5MCSS9iT716mtjxaIinzKiZUL7mWJDuJZycK/exec';
 
 export const getApiUrl = (): string => {
-  return localStorage.getItem(API_URL_KEY) || import.meta.env.VITE_API_URL || '';
+  return localStorage.getItem(API_URL_KEY) || import.meta.env.VITE_API_URL || DEFAULT_API_URL;
 };
 
 export const setApiUrl = (url: string): void => {
