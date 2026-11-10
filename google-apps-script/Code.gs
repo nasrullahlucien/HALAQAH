@@ -1,0 +1,684 @@
+/**
+ * ==========================================================================
+ * ระบบบันทึกหะละเกาะฮฺ (Halaqah Recording System) - Backend Google Apps Script
+ * ==========================================================================
+ * 
+ * วิธีการติดตั้งและเริ่มใช้งาน:
+ * 1. เปิด Google Sheets ใหม่ที่ต้องการใช้เก็บข้อมูล
+ * 2. ไปที่ Extensions (ส่วนขยาย) > Apps Script
+ * 3. คัดลอกโค้ดทั้งหมดในไฟล์นี้ไปวางแทนที่โค้ดเดิมใน Code.gs
+ * 4. รันฟังก์ชัน `initialSetup()` ครั้งแรกเพื่อสร้างชีต หัวตาราง และข้อมูลตัวอย่าง
+ * 5. ไปที่ Project Settings (ไอคอนฟันเฟืองด้านซ้าย) > Script Properties
+ *    - หรือรัน `setAdminPin("123456")` เพื่อตั้งรหัส PIN ผู้ดูแลระบบ (เปลี่ยนเป็นรหัสของคุณเอง)
+ * 6. กดปุ่ม Deploy (การทำให้ใช้งานได้) > New deployment (การทำให้ใช้งานได้ใหม่)
+ *    - เลือกประเภท: Web app
+ *    - Description: "Halaqah API v1"
+ *    - Execute as: "Me" (ฉัน)
+ *    - Who has access: "Anyone" (ทุกคน)
+ * 7. คัดลอก Web App URL ไปใส่ในตัวแปร VITE_API_URL ในไฟล์ .env ของหน้าเว็บ
+ */
+
+// ชื่อชีตทั้งหมดในระบบ
+const SHEETS = {
+  MEMBERS: 'Members',
+  SESSIONS: 'Sessions',
+  PAYMENTS: 'Payments',
+  EXPENSES: 'Expenses',
+  ATTENDANCE: 'Attendance',
+  CONFIG: 'Config'
+};
+
+const DEFAULT_PIN_PROPERTY = 'ADMIN_PIN';
+const DEFAULT_PIN_VALUE = '123456';
+
+/**
+ * ฟังก์ชันสร้างชีตเริ่มต้น พร้อมกำหนดหัวตารางและข้อมูลตัวอย่าง
+ * ให้กดรันฟังก์ชันนี้ 1 ครั้งหลังจากติดตั้งโค้ด
+ */
+function initialSetup() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 1. ชีต Members
+  let membersSheet = ss.getSheetByName(SHEETS.MEMBERS);
+  if (!membersSheet) {
+    membersSheet = ss.insertSheet(SHEETS.MEMBERS);
+  }
+  membersSheet.clear();
+  membersSheet.appendRow(['member_id', 'name', 'status', 'initial_balance', 'created_at']);
+  membersSheet.getRange(1, 1, 1, 5).setFontWeight('bold').setBackground('#E2F0D9');
+  
+  // ข้อมูลตัวอย่างสมาชิก
+  const sampleMembers = [
+    ['M01', 'อับดุลลอฮฺ', 'active', 0, new Date().toISOString()],
+    ['M02', 'มุฮัมมัด', 'active', 0, new Date().toISOString()],
+    ['M03', 'อะหมัด', 'active', 0, new Date().toISOString()],
+    ['M04', 'อิบรอฮีม', 'active', 0, new Date().toISOString()],
+    ['M05', 'ยูซุฟ', 'active', 0, new Date().toISOString()]
+  ];
+  sampleMembers.forEach(row => membersSheet.appendRow(row));
+
+  // 2. ชีต Sessions
+  let sessionsSheet = ss.getSheetByName(SHEETS.SESSIONS);
+  if (!sessionsSheet) {
+    sessionsSheet = ss.insertSheet(SHEETS.SESSIONS);
+  }
+  sessionsSheet.clear();
+  sessionsSheet.appendRow(['session_id', 'session_date', 'amount_per_session', 'topic_or_note', 'created_at']);
+  sessionsSheet.getRange(1, 1, 1, 5).setFontWeight('bold').setBackground('#E2F0D9');
+
+  // ตัวอย่างงวดการนัดพบ
+  const sampleSessions = [
+    ['S001', '2026-10-04', 20, 'ปฐมนิเทศและเป้าหมายกลุ่ม', new Date().toISOString()],
+    ['S002', '2026-10-18', 20, 'ตัฟซีร ซูเราะฮฺ อัลฟาติหะฮฺ', new Date().toISOString()],
+    ['S003', '2026-11-01', 20, 'มารยาทการแสวงหาความรู้', new Date().toISOString()]
+  ];
+  sampleSessions.forEach(row => sessionsSheet.appendRow(row));
+
+  // 3. ชีต Payments
+  let paymentsSheet = ss.getSheetByName(SHEETS.PAYMENTS);
+  if (!paymentsSheet) {
+    paymentsSheet = ss.insertSheet(SHEETS.PAYMENTS);
+  }
+  paymentsSheet.clear();
+  paymentsSheet.appendRow(['payment_id', 'date', 'member_id', 'amount', 'note', 'created_at']);
+  paymentsSheet.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#E2F0D9');
+
+  // ตัวอย่างการชำระเงิน
+  const samplePayments = [
+    ['P001', '2026-10-04', 'M01', 60, 'จ่ายล่วงหน้า 3 ครั้ง (โอน)', new Date().toISOString()],
+    ['P002', '2026-10-04', 'M02', 40, 'จ่าย 2 ครั้ง', new Date().toISOString()],
+    ['P003', '2026-10-18', 'M03', 20, 'จ่ายเงินสดครั้งที่ 2', new Date().toISOString()],
+    ['P004', '2026-11-01', 'M04', 60, 'โอนรวม 3 ครั้ง', new Date().toISOString()]
+  ];
+  samplePayments.forEach(row => paymentsSheet.appendRow(row));
+
+  // 4. ชีต Expenses
+  let expensesSheet = ss.getSheetByName(SHEETS.EXPENSES);
+  if (!expensesSheet) {
+    expensesSheet = ss.insertSheet(SHEETS.EXPENSES);
+  }
+  expensesSheet.clear();
+  expensesSheet.appendRow(['expense_id', 'date', 'item', 'amount', 'category', 'expense_type', 'member_id', 'deduct_from', 'receipt_url', 'created_at']);
+  expensesSheet.getRange(1, 1, 1, 10).setFontWeight('bold').setBackground('#FCE4D6');
+
+  // ตัวอย่างค่าใช้จ่าย
+  const sampleExpenses = [
+    ['E001', '2026-10-04', 'สมุดบันทึกและเอกสารหะละเกาะฮฺ', 50, 'เอกสาร', 'communal', '', 'group_fund', '', new Date().toISOString()],
+    ['E002', '2026-10-18', 'น้ำดื่มและอินทผาลัม', 40, 'อาหาร/เครื่องดื่ม', 'communal', '', 'group_fund', '', new Date().toISOString()]
+  ];
+  sampleExpenses.forEach(row => expensesSheet.appendRow(row));
+
+  // 5. ชีต Attendance
+  let attendanceSheet = ss.getSheetByName(SHEETS.ATTENDANCE);
+  if (!attendanceSheet) {
+    attendanceSheet = ss.insertSheet(SHEETS.ATTENDANCE);
+  }
+  attendanceSheet.clear();
+  attendanceSheet.appendRow(['attendance_id', 'session_date', 'member_id', 'status', 'note', 'updated_at']);
+  attendanceSheet.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#FFF2CC');
+
+  const sampleAttendance = [
+    ['2026-10-04_M01', '2026-10-04', 'M01', 'present', '', new Date().toISOString()],
+    ['2026-10-04_M02', '2026-10-04', 'M02', 'present', '', new Date().toISOString()],
+    ['2026-10-04_M03', '2026-10-04', 'M03', 'leave', 'ติดธุระครอบครัว', new Date().toISOString()],
+    ['2026-10-04_M04', '2026-10-04', 'M04', 'present', '', new Date().toISOString()],
+    ['2026-10-04_M05', '2026-10-04', 'M05', 'absent', 'ไม่สามารถติดต่อได้', new Date().toISOString()],
+    ['2026-10-18_M01', '2026-10-18', 'M01', 'present', '', new Date().toISOString()],
+    ['2026-10-18_M02', '2026-10-18', 'M02', 'present', '', new Date().toISOString()],
+    ['2026-10-18_M03', '2026-10-18', 'M03', 'present', '', new Date().toISOString()],
+    ['2026-10-18_M04', '2026-10-18', 'M04', 'present', '', new Date().toISOString()],
+    ['2026-10-18_M05', '2026-10-18', 'M05', 'leave', 'ป่วย', new Date().toISOString()]
+  ];
+  sampleAttendance.forEach(row => attendanceSheet.appendRow(row));
+
+  // 6. ชีต Config
+  let configSheet = ss.getSheetByName(SHEETS.CONFIG);
+  if (!configSheet) {
+    configSheet = ss.insertSheet(SHEETS.CONFIG);
+  }
+  configSheet.clear();
+  configSheet.appendRow(['key', 'value', 'description']);
+  configSheet.getRange(1, 1, 1, 3).setFontWeight('bold').setBackground('#D9E1F2');
+  configSheet.appendRow(['group_name', 'กลุ่มหะละเกาะฮฺอัล-อิคลาศ', 'ชื่อกลุ่มหะละเกาะฮฺ']);
+  configSheet.appendRow(['default_amount_per_session', '20', 'ยอดเก็บเงินต่อครั้งมาตรฐาน']);
+
+  // กำหนดรหัส PIN เริ่มต้น
+  const props = PropertiesService.getScriptProperties();
+  if (!props.getProperty(DEFAULT_PIN_PROPERTY)) {
+    props.setProperty(DEFAULT_PIN_PROPERTY, DEFAULT_PIN_VALUE);
+  }
+
+  // ลบ Sheet1 เริ่มต้นถ้ามี
+  const defaultSheet = ss.getSheetByName('Sheet1') || ss.getSheetByName('แผ่นงาน1');
+  if (defaultSheet && ss.getSheets().length > 1) {
+    try {
+      ss.deleteSheet(defaultSheet);
+    } catch (e) {}
+  }
+
+  Logger.log('สร้างชีตและข้อมูลตัวอย่างเรียบร้อยแล้ว! รหัส PIN เริ่มต้นคือ: ' + DEFAULT_PIN_VALUE);
+}
+
+/**
+ * ฟังก์ชันสำหรับเปลี่ยนรหัส PIN ผู้ดูแลระบบ
+ */
+function setAdminPin(newPin) {
+  if (!newPin || String(newPin).trim().length < 4) {
+    throw new Error('รหัส PIN ต้องมีความยาวอย่างน้อย 4 หลัก');
+  }
+  PropertiesService.getScriptProperties().setProperty(DEFAULT_PIN_PROPERTY, String(newPin).trim());
+  Logger.log('เปลี่ยนรหัส PIN ผู้ดูแลระบบสำเร็จแล้ว');
+}
+
+/**
+ * ==========================================================================
+ * GET Request: คืนค่าข้อมูลทั้งหมดสำหรับแสดงผลบนเว็บ
+ * ==========================================================================
+ */
+function doGet(e) {
+  try {
+    const data = getAllData();
+    return createJsonResponse({
+      success: true,
+      timestamp: new Date().toISOString(),
+      data: data
+    });
+  } catch (error) {
+    return createJsonResponse({
+      success: false,
+      error: error.message || 'เกิดข้อผิดพลาดในการดึงข้อมูล'
+    });
+  }
+}
+
+/**
+ * ==========================================================================
+ * POST Request: รับคำสั่งบันทึก / แก้ไข / ลบข้อมูล (ต้องผ่านการตรวจ PIN)
+ * ==========================================================================
+ */
+function doPost(e) {
+  // ใช้ Lock ป้องกันการบันทึกข้อมูลซ้อนกัน (Race Conditions)
+  const lock = LockService.getScriptLock();
+  const hasLock = lock.tryLock(15000); // รอสูงสุด 15 วินาที
+  
+  if (!hasLock) {
+    return createJsonResponse({
+      success: false,
+      error: 'ระบบกำลังประมวลผลคำขออื่นอยู่ กรุณาลองใหม่อีกครั้งในอีกสักครู่'
+    });
+  }
+
+  try {
+    let requestData;
+    if (e.postData && e.postData.contents) {
+      requestData = JSON.parse(e.postData.contents);
+    } else {
+      throw new Error('ไม่พบข้อมูลในคำขอ (No payload received)');
+    }
+
+    const action = requestData.action;
+    const adminPin = requestData.admin_pin;
+    const payload = requestData.payload || {};
+
+    // ตรวจสอบความถูกต้องของ PIN
+    const storedPin = PropertiesService.getScriptProperties().getProperty(DEFAULT_PIN_PROPERTY) || DEFAULT_PIN_VALUE;
+    if (!adminPin || String(adminPin).trim() !== String(storedPin).trim()) {
+      return createJsonResponse({
+        success: false,
+        error: 'รหัส PIN ผู้ดูแลระบบไม่ถูกต้อง ไม่สามารถดำเนินการได้'
+      });
+    }
+
+    let result;
+    switch (action) {
+      case 'verify_pin':
+        result = { verified: true, message: 'ยืนยันตัวตนสำเร็จ' };
+        break;
+
+      case 'add_payment':
+        result = handleAddPayment(payload);
+        break;
+
+      case 'add_expense':
+        result = handleAddExpense(payload);
+        break;
+
+      case 'record_attendance':
+        result = handleRecordAttendance(payload);
+        break;
+
+      case 'add_session':
+        result = handleAddSession(payload);
+        break;
+
+      case 'add_member':
+        result = handleAddMember(payload);
+        break;
+
+      case 'update_member':
+        result = handleUpdateMember(payload);
+        break;
+
+      case 'delete_payment':
+        result = handleDeletePayment(payload);
+        break;
+
+      case 'delete_expense':
+        result = handleDeleteExpense(payload);
+        break;
+
+      default:
+        throw new Error('ไม่รู้จักคำสั่ง: ' + action);
+    }
+
+    // ดึงข้อมูลล่าสุดคืนกลับไปให้หน้าเว็บเพื่อให้อัปเดต State ทันที
+    const refreshedData = getAllData();
+
+    return createJsonResponse({
+      success: true,
+      action: action,
+      result: result,
+      data: refreshedData
+    });
+
+  } catch (error) {
+    return createJsonResponse({
+      success: false,
+      error: error.message || 'เกิดข้อผิดพลาดในการประมวลผลคำขอ'
+    });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * อ่านข้อมูลทั้งหมดจากทุกชีตแล้วแปลงเป็น JSON Object
+ */
+function getAllData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const members = readSheetData(ss.getSheetByName(SHEETS.MEMBERS));
+  const sessions = readSheetData(ss.getSheetByName(SHEETS.SESSIONS));
+  const payments = readSheetData(ss.getSheetByName(SHEETS.PAYMENTS));
+  const expenses = readSheetData(ss.getSheetByName(SHEETS.EXPENSES));
+  const attendance = readSheetData(ss.getSheetByName(SHEETS.ATTENDANCE));
+  
+  // แปลง Config ให้เป็น Key-Value Object
+  const configRows = readSheetData(ss.getSheetByName(SHEETS.CONFIG));
+  const config = {};
+  configRows.forEach(row => {
+    if (row.key) {
+      config[row.key] = row.value;
+    }
+  });
+
+  return {
+    members: members.map(m => ({
+      member_id: String(m.member_id || ''),
+      name: String(m.name || ''),
+      status: String(m.status || 'active'),
+      initial_balance: Number(m.initial_balance || 0),
+      created_at: m.created_at ? formatDateString(m.created_at) : ''
+    })),
+    sessions: sessions.map(s => ({
+      session_id: String(s.session_id || ''),
+      session_date: formatDateOnly(s.session_date),
+      amount_per_session: Number(s.amount_per_session || 20),
+      topic_or_note: String(s.topic_or_note || ''),
+      created_at: s.created_at ? formatDateString(s.created_at) : ''
+    })).sort((a, b) => a.session_date.localeCompare(b.session_date)),
+    payments: payments.map(p => ({
+      payment_id: String(p.payment_id || ''),
+      date: formatDateOnly(p.date),
+      member_id: String(p.member_id || ''),
+      amount: Number(p.amount || 0),
+      note: String(p.note || ''),
+      created_at: p.created_at ? formatDateString(p.created_at) : ''
+    })).sort((a, b) => b.date.localeCompare(a.date)),
+    expenses: expenses.map(e => ({
+      expense_id: String(e.expense_id || ''),
+      date: formatDateOnly(e.date),
+      item: String(e.item || ''),
+      amount: Number(e.amount || 0),
+      category: String(e.category || 'อื่นๆ'),
+      expense_type: String(e.expense_type || 'communal'), // 'communal' | 'individual'
+      member_id: String(e.member_id || ''),
+      deduct_from: String(e.deduct_from || 'group_fund'), // 'group_fund' | 'member_balance'
+      receipt_url: String(e.receipt_url || ''),
+      created_at: e.created_at ? formatDateString(e.created_at) : ''
+    })).sort((a, b) => b.date.localeCompare(a.date)),
+    attendance: attendance.map(a => ({
+      attendance_id: String(a.attendance_id || ''),
+      session_date: formatDateOnly(a.session_date),
+      member_id: String(a.member_id || ''),
+      status: String(a.status || 'present'),
+      note: String(a.note || ''),
+      updated_at: a.updated_at ? formatDateString(a.updated_at) : ''
+    })),
+    config: config
+  };
+}
+
+/**
+ * บันทึกรายรับ (Payments)
+ */
+function handleAddPayment(payload) {
+  const memberId = String(payload.member_id || '').trim();
+  const amount = Number(payload.amount);
+  const date = payload.date ? formatDateOnly(payload.date) : formatDateOnly(new Date());
+  const note = String(payload.note || '').trim();
+
+  if (!memberId) throw new Error('กรุณาระบุรหัสสมาชิก');
+  if (isNaN(amount) || amount <= 0) throw new Error('จำนวนเงินต้องมากกว่า 0 บาท');
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEETS.PAYMENTS);
+  if (!sheet) throw new Error('ไม่พบชีต Payments');
+
+  // ตรวจสอบว่าสมาชิกมีอยู่จริง
+  validateMemberExists(ss, memberId);
+
+  const paymentId = 'P' + Utilities.formatDate(new Date(), 'GMT+7', 'yyyyMMdd_HHmmss') + '_' + Math.floor(Math.random() * 1000);
+  const newRow = [
+    paymentId,
+    date,
+    memberId,
+    amount,
+    note,
+    new Date().toISOString()
+  ];
+
+  sheet.appendRow(newRow);
+  return { payment_id: paymentId, message: 'บันทึกรายรับสำเร็จ' };
+}
+
+/**
+ * บันทึกรายจ่าย (Expenses)
+ */
+function handleAddExpense(payload) {
+  const item = String(payload.item || '').trim();
+  const amount = Number(payload.amount);
+  const date = payload.date ? formatDateOnly(payload.date) : formatDateOnly(new Date());
+  const category = String(payload.category || 'อื่นๆ').trim();
+  const expenseType = payload.expense_type === 'individual' ? 'individual' : 'communal';
+  const memberId = String(payload.member_id || '').trim();
+  let deductFrom = String(payload.deduct_from || 'group_fund').trim();
+  const receiptUrl = String(payload.receipt_url || '').trim();
+
+  if (!item) throw new Error('กรุณาระบุรายการค่าใช้จ่าย');
+  if (isNaN(amount) || amount <= 0) throw new Error('จำนวนเงินต้องมากกว่า 0 บาท');
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (expenseType === 'individual') {
+    if (!memberId) throw new Error('กรณีรายจ่ายเฉพาะคน กรุณาเลือกรหัสสมาชิก');
+    validateMemberExists(ss, memberId);
+    if (deductFrom !== 'group_fund' && deductFrom !== 'member_balance') {
+      deductFrom = 'group_fund';
+    }
+  } else {
+    // ส่วนกลาง บังคับหักจากกองกลางเสมอ
+    deductFrom = 'group_fund';
+  }
+
+  const sheet = ss.getSheetByName(SHEETS.EXPENSES);
+  if (!sheet) throw new Error('ไม่พบชีต Expenses');
+
+  const expenseId = 'E' + Utilities.formatDate(new Date(), 'GMT+7', 'yyyyMMdd_HHmmss') + '_' + Math.floor(Math.random() * 1000);
+  const newRow = [
+    expenseId,
+    date,
+    item,
+    amount,
+    category,
+    expenseType,
+    expenseType === 'individual' ? memberId : '',
+    deductFrom,
+    receiptUrl,
+    new Date().toISOString()
+  ];
+
+  sheet.appendRow(newRow);
+  return { expense_id: expenseId, message: 'บันทึกรายจ่ายสำเร็จ' };
+}
+
+/**
+ * บันทึกการเช็คชื่อเข้าพบ (Attendance) แบบชุด (Batch)
+ * payload: { session_date: 'YYYY-MM-DD', records: [{ member_id: 'M01', status: 'present', note: '' }, ...] }
+ */
+function handleRecordAttendance(payload) {
+  const sessionDate = formatDateOnly(payload.session_date);
+  const records = payload.records;
+
+  if (!sessionDate) throw new Error('กรุณาระบุวันที่นัด');
+  if (!records || !Array.isArray(records) || records.length === 0) {
+    throw new Error('ไม่พบข้อมูลรายชื่อที่ต้องการบันทึก');
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEETS.ATTENDANCE);
+  if (!sheet) throw new Error('ไม่พบชีต Attendance');
+
+  const data = sheet.getDataRange().getValues();
+  // ค้นหารายการเดิมตาม session_date เพื่ออัปเดต หรือถ้าไม่มีให้เพิ่มใหม่
+  const existingRowMap = {}; // key: session_date_member_id -> rowIndex (1-based)
+  for (let i = 1; i < data.length; i++) {
+    const rowDate = formatDateOnly(data[i][1]);
+    const rowMember = String(data[i][2]);
+    const key = `${rowDate}_${rowMember}`;
+    existingRowMap[key] = i + 1; // 1-based index in sheet
+  }
+
+  records.forEach(rec => {
+    const mId = String(rec.member_id).trim();
+    const status = ['present', 'absent', 'leave'].includes(rec.status) ? rec.status : 'present';
+    const note = String(rec.note || '').trim();
+    const key = `${sessionDate}_${mId}`;
+    const nowIso = new Date().toISOString();
+
+    if (existingRowMap[key]) {
+      // อัปเดตแถวเดิม
+      const rIdx = existingRowMap[key];
+      sheet.getRange(rIdx, 4, 1, 3).setValues([[status, note, nowIso]]);
+    } else {
+      // เพิ่มแถวใหม่
+      sheet.appendRow([key, sessionDate, mId, status, note, nowIso]);
+    }
+  });
+
+  return { message: `บันทึกการเช็คชื่อ ${records.length} คน สำหรับวันที่ ${sessionDate} เรียบร้อยแล้ว` };
+}
+
+/**
+ * เพิ่มงวดการนัดพบใหม่ (Sessions)
+ */
+function handleAddSession(payload) {
+  const sessionDate = formatDateOnly(payload.session_date);
+  const amount = Number(payload.amount_per_session || 20);
+  const topicOrNote = String(payload.topic_or_note || '').trim();
+
+  if (!sessionDate) throw new Error('กรุณาระบุวันที่นัดพบ');
+  if (isNaN(amount) || amount < 0) throw new Error('ยอดต่องวดไม่ถูกต้อง');
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEETS.SESSIONS);
+  if (!sheet) throw new Error('ไม่พบชีต Sessions');
+
+  // ตรวจสอบว่าวันที่ซ้ำหรือไม่
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (formatDateOnly(data[i][1]) === sessionDate) {
+      throw new Error(`มีงวดนัดพบวันที่ ${sessionDate} อยู่แล้วในระบบ`);
+    }
+  }
+
+  const sessionId = 'S' + Utilities.formatDate(new Date(), 'GMT+7', 'yyyyMMdd_HHmmss');
+  sheet.appendRow([sessionId, sessionDate, amount, topicOrNote, new Date().toISOString()]);
+
+  return { session_id: sessionId, message: 'เพิ่มงวดนัดพบเรียบร้อยแล้ว' };
+}
+
+/**
+ * เพิ่มสมาชิกใหม่ (Members)
+ */
+function handleAddMember(payload) {
+  const name = String(payload.name || '').trim();
+  const initialBalance = Number(payload.initial_balance || 0);
+
+  if (!name) throw new Error('กรุณาระบุชื่อสมาชิก');
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEETS.MEMBERS);
+  if (!sheet) throw new Error('ไม่พบชีต Members');
+
+  // หารหัสสมาชิกถัดไป เช่น M01, M02, ...
+  const data = sheet.getDataRange().getValues();
+  let maxIdNum = 0;
+  for (let i = 1; i < data.length; i++) {
+    const idStr = String(data[i][0]).replace(/\D/g, '');
+    const num = parseInt(idStr, 10);
+    if (!isNaN(num) && num > maxIdNum) {
+      maxIdNum = num;
+    }
+  }
+  const nextId = 'M' + String(maxIdNum + 1).padStart(2, '0');
+
+  sheet.appendRow([nextId, name, 'active', initialBalance, new Date().toISOString()]);
+
+  return { member_id: nextId, message: 'เพิ่มสมาชิกเรียบร้อยแล้ว' };
+}
+
+/**
+ * อัปเดตข้อมูลสมาชิก (สถานะ, ชื่อ)
+ */
+function handleUpdateMember(payload) {
+  const memberId = String(payload.member_id || '').trim();
+  if (!memberId) throw new Error('กรุณาระบุรหัสสมาชิก');
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEETS.MEMBERS);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === memberId) {
+      if (payload.name !== undefined) sheet.getRange(i + 1, 2).setValue(String(payload.name).trim());
+      if (payload.status !== undefined) sheet.getRange(i + 1, 3).setValue(payload.status === 'inactive' ? 'inactive' : 'active');
+      if (payload.initial_balance !== undefined) sheet.getRange(i + 1, 4).setValue(Number(payload.initial_balance));
+      return { member_id: memberId, message: 'อัปเดตข้อมูลสมาชิกเรียบร้อยแล้ว' };
+    }
+  }
+
+  throw new Error(`ไม่พบสมาชิกรหัส ${memberId}`);
+}
+
+/**
+ * ลบรายการรับเงิน
+ */
+function handleDeletePayment(payload) {
+  const paymentId = String(payload.payment_id || '').trim();
+  if (!paymentId) throw new Error('กรุณาระบุ payment_id');
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEETS.PAYMENTS);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === paymentId) {
+      sheet.deleteRow(i + 1);
+      return { message: 'ลบรายการรับเงินเรียบร้อยแล้ว' };
+    }
+  }
+
+  throw new Error(`ไม่พบรายการรับเงิน ${paymentId}`);
+}
+
+/**
+ * ลบรายการค่าใช้จ่าย
+ */
+function handleDeleteExpense(payload) {
+  const expenseId = String(payload.expense_id || '').trim();
+  if (!expenseId) throw new Error('กรุณาระบุ expense_id');
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEETS.EXPENSES);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === expenseId) {
+      sheet.deleteRow(i + 1);
+      return { message: 'ลบรายการค่าใช้จ่ายเรียบร้อยแล้ว' };
+    }
+  }
+
+  throw new Error(`ไม่พบรายการจ่ายเงิน ${expenseId}`);
+}
+
+/**
+ * ==========================================================================
+ * Helper Utilities
+ * ==========================================================================
+ */
+
+function readSheetData(sheet) {
+  if (!sheet) return [];
+  const range = sheet.getDataRange();
+  const values = range.getValues();
+  if (values.length <= 1) return [];
+
+  const headers = values[0].map(h => String(h).trim());
+  const rows = [];
+
+  for (let i = 1; i < values.length; i++) {
+    const row = values[i];
+    // ถ้าแถวว่างเปล่าทั้งหมด ให้ข้าม
+    if (row.every(cell => cell === '' || cell === null)) continue;
+
+    const rowObj = {};
+    for (let j = 0; j < headers.length; j++) {
+      rowObj[headers[j]] = row[j];
+    }
+    rows.push(rowObj);
+  }
+  return rows;
+}
+
+function validateMemberExists(ss, memberId) {
+  const sheet = ss.getSheetByName(SHEETS.MEMBERS);
+  if (!sheet) return;
+  const values = sheet.getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]).trim() === memberId) {
+      return true;
+    }
+  }
+  throw new Error(`ไม่พบสมาชิกรหัส ${memberId} ในระบบ`);
+}
+
+function formatDateOnly(dateVal) {
+  if (!dateVal) return '';
+  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+    return dateVal;
+  }
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    return Utilities.formatDate(d, 'GMT+7', 'yyyy-MM-dd');
+  } catch (e) {
+    return String(dateVal);
+  }
+}
+
+function formatDateString(dateVal) {
+  if (!dateVal) return '';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    return Utilities.formatDate(d, 'GMT+7', 'yyyy-MM-dd HH:mm:ss');
+  } catch (e) {
+    return String(dateVal);
+  }
+}
+
+function createJsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
