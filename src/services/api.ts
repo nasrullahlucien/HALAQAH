@@ -67,8 +67,12 @@ export const fetchAllData = async (): Promise<{ data: AppData; isOffline: boolea
 
     const result = await response.json();
     if (result.success && result.data) {
-      saveCachedData(result.data);
-      return { data: result.data, isOffline: false };
+      const formattedData: AppData = {
+        ...result.data,
+        amanah: Array.isArray(result.data.amanah) ? result.data.amanah : []
+      };
+      saveCachedData(formattedData);
+      return { data: formattedData, isOffline: false };
     } else {
       throw new Error(result.error || 'โครงสร้างข้อมูลตอบกลับไม่ถูกต้อง');
     }
@@ -214,6 +218,37 @@ function handleLocalAction(
       };
       saveCachedData(updated);
       return { success: true, data: updated, message: 'บันทึกการเช็คชื่อเรียบร้อยแล้ว' };
+    }
+
+    case 'save_amanah': {
+      const payloadAmanah = payload as any;
+      const sessionDate = payloadAmanah.session_date;
+      const currentAmanahList = current.amanah || [];
+      const idx = currentAmanahList.findIndex(a => a.session_date === sessionDate);
+      
+      const newRecord = {
+        amanah_id: payloadAmanah.amanah_id || 'AM_' + sessionDate,
+        session_date: sessionDate,
+        assignments: payloadAmanah.assignments || [],
+        general_tasks: payloadAmanah.general_tasks || [],
+        location: payloadAmanah.location || '',
+        note: payloadAmanah.note || '',
+        updated_at: new Date().toISOString()
+      };
+
+      const newAmanahList = [...currentAmanahList];
+      if (idx >= 0) {
+        newAmanahList[idx] = newRecord;
+      } else {
+        newAmanahList.unshift(newRecord);
+      }
+
+      const updated = {
+        ...current,
+        amanah: newAmanahList
+      };
+      saveCachedData(updated);
+      return { success: true, data: updated, message: 'บันทึกข้อมูลอามานะฮ์เรียบร้อยแล้ว' };
     }
 
     case 'add_session': {

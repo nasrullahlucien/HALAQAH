@@ -56,6 +56,22 @@ export interface AttendanceRecord {
   updated_at?: string;
 }
 
+export interface AmanahAssignment {
+  role: string;         // e.g. "ดำเนินรายการ", "ตัฟซีร", "ฮะดีษ", "ข่าว"
+  member_id: string;    // e.g. "M02"
+  topic?: string;       // e.g. "ซูเราะฮฺ อัลฆอชิยะฮ์ อายัต 8 - 14"
+}
+
+export interface AmanahRecord {
+  amanah_id?: string;
+  session_date: string;     // YYYY-MM-DD
+  assignments: AmanahAssignment[];
+  general_tasks: string[];  // e.g. ["อ่านอัลกุรอาน อย่างน้อยคนละ 2 หน้า", "วากัฟ (สัปดาห์ละครั้ง)"]
+  location?: string;        // e.g. "มัสยิดคอลิด/ดูความเหมาะสมของสถานที่"
+  note?: string;            // หมายเหตุเพิ่มเติม
+  updated_at?: string;
+}
+
 export interface AppConfig {
   group_name?: string;
   default_amount_per_session?: string | number;
@@ -68,6 +84,7 @@ export interface AppData {
   payments: Payment[];
   expenses: Expense[];
   attendance: AttendanceRecord[];
+  amanah: AmanahRecord[];
   config: AppConfig;
 }
 

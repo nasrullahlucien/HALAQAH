@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Wallet,
   TrendingUp,
@@ -10,7 +10,10 @@ import {
   Receipt,
   ArrowUpRight,
   ArrowDownLeft,
-  CalendarPlus
+  CalendarPlus,
+  BookOpen,
+  Copy,
+  Check
 } from 'lucide-react';
 import { AppData, GroupFinancialSummary } from '../types';
 import { formatCurrency, formatThaiDate } from '../utils/calculations';
@@ -31,6 +34,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigateTab,
   onOpenSessionModal
 }) => {
+  const [copiedLine, setCopiedLine] = useState(false);
+  const latestAmanah = data.amanah && data.amanah.length > 0 ? data.amanah[0] : null;
+
+  const handleQuickCopyLine = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!latestAmanah) return;
+    const [y, m, d] = latestAmanah.session_date.split('-');
+    const thaiYear2Digits = y ? String(parseInt(y, 10) + 543).slice(-2) : '69';
+    const shortDateFormatted = `${parseInt(d, 10)}/${parseInt(m, 10)}/${thaiYear2Digits}`;
+
+    let msg = `السلام عليكم ورحمة الله وبركاته\n\n** ฮาลาเกาะฮฺ สัปดาห์นี้\n${shortDateFormatted}\n\n`;
+    latestAmanah.assignments.forEach((assign) => {
+      const member = data.members.find((m) => m.member_id === assign.member_id);
+      const name = member?.name || assign.member_id;
+      const honorific = name.startsWith('อ.') ? name : `อ.${name}`;
+      msg += `✍️ ${assign.role}${assign.topic ? ' ' + assign.topic : ''} (${honorific})\n`;
+    });
+    if (latestAmanah.general_tasks?.length) {
+      msg += `\n✅✅ ภารกิจผู้ศรัทธา\n`;
+      latestAmanah.general_tasks.forEach((t) => (msg += `✍️ ${t}\n`));
+    }
+    if (latestAmanah.location) msg += `\n🏍️🚙🚲 สถานที่ ${latestAmanah.location}\n`;
+    if (latestAmanah.note) msg += `\n** ${latestAmanah.note} **`;
+
+    navigator.clipboard.writeText(msg);
+    setCopiedLine(true);
+    setTimeout(() => setCopiedLine(false), 2000);
+  };
   // งวดล่าสุด หรือนัดหมายครั้งถัดไป
   const latestSession = data.sessions.length > 0 
     ? data.sessions[data.sessions.length - 1]
@@ -156,6 +187,56 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </p>
         </div>
       </div>
+
+      {/* 2.5 การ์ดอามานะฮ์ประจำสัปดาห์ (Amanah Featured Card) */}
+      {latestAmanah && (
+        <div
+          onClick={() => onNavigateTab('amanah')}
+          className="bg-gradient-to-br from-amber-500/10 via-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl p-4 shadow-2xs hover:border-amber-400 transition-all cursor-pointer relative overflow-hidden"
+        >
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-2xs">
+                <BookOpen size={16} />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <span>อามานะฮ์ สัปดาห์นี้</span>
+                  <span className="text-[10px] bg-amber-200/60 text-amber-900 font-semibold px-1.5 py-0.2 rounded-full">
+                    {formatThaiDate(latestAmanah.session_date)}
+                  </span>
+                </h3>
+                <p className="text-[11px] text-slate-500">หน้าที่รับผิดชอบของแต่ละคน</p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleQuickCopyLine}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all shadow-2xs active:scale-95 ${
+                copiedLine
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              {copiedLine ? <Check size={12} /> : <Copy size={12} className="text-amber-600" />}
+              <span>{copiedLine ? 'คัดลอกแล้ว!' : 'คัดลอกส่ง LINE'}</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+            {latestAmanah.assignments.slice(0, 4).map((assign, i) => {
+              const mem = data.members.find((m) => m.member_id === assign.member_id);
+              return (
+                <div key={i} className="flex items-center gap-1.5 text-slate-700 truncate">
+                  <span className="text-amber-600 font-bold">✍️</span>
+                  <span className="font-semibold text-slate-800">{assign.role}:</span>
+                  <span className="text-slate-600 truncate">อ.{mem?.name || assign.member_id}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 3. ปุ่มเมนูลัดสำหรับผู้ดูแล (Quick Actions) */}
       <div className="bg-white rounded-2xl border border-slate-200 p-4">

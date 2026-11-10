@@ -11,6 +11,7 @@ import { DashboardView } from './components/DashboardView';
 import { MatrixView } from './components/MatrixView';
 import { TransactionsView } from './components/TransactionsView';
 import { AttendanceView } from './components/AttendanceView';
+import { AmanahView } from './components/AmanahView';
 import { MembersView } from './components/MembersView';
 import { AdminPinModal } from './components/AdminPinModal';
 import { SettingsModal } from './components/SettingsModal';
@@ -127,6 +128,16 @@ export const App: React.FC = () => {
             adminPin={adminPin}
             onOpenAdminModal={() => setIsAdminModalOpen(true)}
             onOpenSessionModal={() => setIsSessionModalOpen(true)}
+            onRefreshData={loadData}
+          />
+        )}
+
+        {activeTab === 'amanah' && (
+          <AmanahView
+            data={data}
+            isAdmin={isAdmin}
+            adminPin={adminPin}
+            onOpenAdminModal={() => setIsAdminModalOpen(true)}
             onRefreshData={loadData}
           />
         )}

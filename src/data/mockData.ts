@@ -71,5 +71,39 @@ export const initialMockData: AppData = {
       receipt_url: ''
     }
   ],
-  attendance: []
+  attendance: [],
+  amanah: [
+    {
+      amanah_id: 'AM_2026-09-23',
+      session_date: '2026-09-23',
+      assignments: [
+        {
+          role: 'ตัฟซีร',
+          member_id: 'M07', // ซาการียา
+          topic: 'ซูเราะฮฺ อัลฆอชิยะฮ์ อายัต 8 - 14'
+        },
+        {
+          role: 'ฮาดิษ',
+          member_id: 'M05', // อัยมาน
+          topic: ''
+        },
+        {
+          role: 'ข่าว',
+          member_id: 'M01', // มะรอมือลี (รอมลี)
+          topic: ''
+        },
+        {
+          role: 'ดำเนินรายการ',
+          member_id: 'M02', // มุสตอฟา
+          topic: ''
+        }
+      ],
+      general_tasks: [
+        'อ่านอัลกุรอาน อย่างน้อยคนละ 2 หน้า',
+        'วากัฟ (สัปดาห์ละครั้ง)'
+      ],
+      location: 'มัสยิดคอลิด/ดูความเหมาะสมของสถานที่',
+      note: 'อินชาอัลลอฮฺ'
+    }
+  ]
 };

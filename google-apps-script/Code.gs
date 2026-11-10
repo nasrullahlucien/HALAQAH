@@ -10,6 +10,7 @@ const SHEETS = {
   PAYMENTS: 'Payments',
   EXPENSES: 'Expenses',
   ATTENDANCE: 'Attendance',
+  AMANAH: 'Amanah',
   CONFIG: 'Config'
 };
 
@@ -131,7 +132,32 @@ function importOriginalSheetData() {
   attendanceSheet.appendRow(['attendance_id', 'session_date', 'member_id', 'status', 'note', 'updated_at']);
   attendanceSheet.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#FFF2CC');
 
-  // 6. ชีต Config
+  // 6. ชีต Amanah (อามานะฮ์ หน้าที่รับผิดชอบรายสัปดาห์)
+  let amanahSheet = ss.getSheetByName(SHEETS.AMANAH);
+  if (!amanahSheet) amanahSheet = ss.insertSheet(SHEETS.AMANAH);
+  amanahSheet.clear();
+  amanahSheet.appendRow(['amanah_id', 'session_date', 'assignments_json', 'general_tasks_text', 'location', 'note', 'updated_at']);
+  amanahSheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#E2D9F3');
+
+  const sampleAssignments = [
+    { role: 'ตัฟซีร', member_id: 'M07', topic: 'ซูเราะฮฺ อัลฆอชิยะฮ์ อายัต 8 - 14' },
+    { role: 'ฮาดิษ', member_id: 'M05', topic: '' },
+    { role: 'ข่าว', member_id: 'M01', topic: '' },
+    { role: 'ดำเนินรายการ', member_id: 'M02', topic: '' }
+  ];
+  const sampleTasks = 'อ่านอัลกุรอาน อย่างน้อยคนละ 2 หน้า\nวากัฟ (สัปดาห์ละครั้ง)';
+
+  amanahSheet.appendRow([
+    'AM_2026-09-23',
+    '2026-09-23',
+    JSON.stringify(sampleAssignments),
+    sampleTasks,
+    'มัสยิดคอลิด/ดูความเหมาะสมของสถานที่',
+    'อินชาอัลลอฮฺ',
+    new Date().toISOString()
+  ]);
+
+  // 7. ชีต Config
   let configSheet = ss.getSheetByName(SHEETS.CONFIG);
   if (!configSheet) configSheet = ss.insertSheet(SHEETS.CONFIG);
   configSheet.clear();
@@ -224,6 +250,10 @@ function doPost(e) {
 
       case 'record_attendance':
         result = handleRecordAttendance(payload);
+        break;
+
+      case 'save_amanah':
+        result = handleSaveAmanah(payload);
         break;
 
       case 'add_session':
@@ -329,6 +359,24 @@ function getAllData() {
       note: String(a.note || ''),
       updated_at: a.updated_at ? formatDateString(a.updated_at) : ''
     })),
+    amanah: readSheetData(ss.getSheetByName(SHEETS.AMANAH)).map(am => {
+      let assignments = [];
+      try {
+        assignments = am.assignments_json ? JSON.parse(am.assignments_json) : [];
+      } catch (e) {
+        assignments = [];
+      }
+      const generalTasks = am.general_tasks_text ? String(am.general_tasks_text).split('\n').filter(Boolean) : [];
+      return {
+        amanah_id: String(am.amanah_id || ''),
+        session_date: formatDateOnly(am.session_date),
+        assignments: assignments,
+        general_tasks: generalTasks,
+        location: String(am.location || ''),
+        note: String(am.note || ''),
+        updated_at: am.updated_at ? formatDateString(am.updated_at) : ''
+      };
+    }).sort((a, b) => b.session_date.localeCompare(a.session_date)),
     config: config
   };
 }
@@ -445,6 +493,54 @@ function handleRecordAttendance(payload) {
   });
 
   return { message: `บันทึกการเช็คชื่อ ${records.length} คน สำหรับวันที่ ${sessionDate} เรียบร้อยแล้ว` };
+}
+
+/**
+ * บันทึกหรืออัปเดตข้อมูลอามานะฮ์ (Amanah)
+ */
+function handleSaveAmanah(payload) {
+  const sessionDate = formatDateOnly(payload.session_date);
+  if (!sessionDate) throw new Error('กรุณาระบุวันที่นัดพบ');
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEETS.AMANAH);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEETS.AMANAH);
+    sheet.appendRow(['amanah_id', 'session_date', 'assignments_json', 'general_tasks_text', 'location', 'note', 'updated_at']);
+    sheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#E2D9F3');
+  }
+
+  const assignmentsJson = JSON.stringify(payload.assignments || []);
+  const generalTasksText = Array.isArray(payload.general_tasks) ? payload.general_tasks.join('\n') : String(payload.general_tasks || '');
+  const location = String(payload.location || '').trim();
+  const note = String(payload.note || '').trim();
+  const amanahId = payload.amanah_id || 'AM_' + sessionDate;
+  const nowIso = new Date().toISOString();
+
+  const data = sheet.getDataRange().getValues();
+  let foundRow = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (formatDateOnly(data[i][1]) === sessionDate) {
+      foundRow = i + 1;
+      break;
+    }
+  }
+
+  if (foundRow > 0) {
+    // อัปเดตแถวเดิม
+    sheet.getRange(foundRow, 3, 1, 5).setValues([[
+      assignmentsJson,
+      generalTasksText,
+      location,
+      note,
+      nowIso
+    ]]);
+  } else {
+    // เพิ่มแถวใหม่
+    sheet.appendRow([amanahId, sessionDate, assignmentsJson, generalTasksText, location, note, nowIso]);
+  }
+
+  return { message: `บันทึกข้อมูลอามานะฮ์สำหรับวันที่ ${sessionDate} เรียบร้อยแล้ว` };
 }
 
 function handleAddSession(payload) {
