@@ -234,7 +234,7 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
             >
               {sortedAmanah.map((a) => (
                 <option key={a.session_date} value={a.session_date}>
-                  นัดพบสัปดาห์นี้: {formatThaiDate(a.session_date)}
+                  นัดพบสัปดาห์ถัดไป: {formatThaiDate(a.session_date)}
                 </option>
               ))}
               {!sortedAmanah.some((a) => a.session_date === selectedDate) && (
@@ -257,7 +257,7 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
                 السلام عليكم ورحمة الله وبركاته
               </p>
               <h3 className="text-base font-extrabold text-slate-900 mt-1">
-                ⭐ ฮาลาเกาะฮฺ สัปดาห์นี้
+                ⭐ ฮาลาเกาะฮฺ สัปดาห์ถัดไป
               </h3>
               <p className="text-xs font-bold text-emerald-700 font-mono mt-0.5">
                 {formatThaiDate(selectedDate)}
@@ -389,7 +389,7 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
           {/* วันที่นัดพบ */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              วันที่นัดพบ (สัปดาห์นี้)
+              วันที่นัดพบ (สัปดาห์ถัดไป)
             </label>
             <input
               type="date"

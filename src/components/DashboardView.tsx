@@ -218,7 +218,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
               <div>
                 <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <span>อามานะฮ์ สัปดาห์นี้</span>
+                  <span>อามานะฮ์ สัปดาห์ถัดไป</span>
                   <span className="text-[10px] bg-amber-200/60 text-amber-900 font-semibold px-1.5 py-0.2 rounded-full">
                     {formatThaiDate(latestAmanah.session_date)}
                   </span>
