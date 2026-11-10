@@ -49,7 +49,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       const member = data.members.find((m) => m.member_id === assign.member_id);
       const name = member?.name || assign.member_id;
       const honorific = name.startsWith('อ.') ? name : `อ.${name}`;
-      msg += `✍️ ${assign.role}${assign.topic ? ' ' + assign.topic : ''} (${honorific})\n`;
+      if (assign.role.includes('ตัฟซีร')) {
+        msg += `✍️ ${assign.role} ${assign.topic ? assign.topic + ' ' : ''}(${honorific})\n`;
+      } else if (
+        assign.role.includes('ฮาดิษ') ||
+        assign.role.includes('ฮะดีษ') ||
+        assign.role.includes('ฟิกฮฺ') ||
+        assign.role.includes('ฟิกฮ์') ||
+        assign.role.includes('อากีดะ') ||
+        assign.role.includes('อะกีดะ')
+      ) {
+        msg += `📝 ${assign.role}${assign.topic ? ' ' + assign.topic : ''} (${honorific})\n`;
+      } else if (assign.role.includes('ข่าว')) {
+        msg += `✍️ ${assign.role} (${honorific})\n`;
+      } else if (assign.role.includes('ดำเนินรายการ')) {
+        msg += `✍️✍️ ${assign.role} (${honorific})\n`;
+      } else {
+        msg += `✍️ ${assign.role}${assign.topic ? ' ' + assign.topic : ''} (${honorific})\n`;
+      }
     });
     if (latestAmanah.general_tasks?.length) {
       msg += `\n✅✅ ภารกิจผู้ศรัทธา\n`;

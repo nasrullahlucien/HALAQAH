@@ -101,7 +101,14 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
 
       if (assign.role.includes('ตัฟซีร')) {
         msg += `✍️ ${assign.role} ${assign.topic ? assign.topic + ' ' : ''}(${honorific})\n`;
-      } else if (assign.role.includes('ฮาดิษ') || assign.role.includes('ฮะดีษ')) {
+      } else if (
+        assign.role.includes('ฮาดิษ') ||
+        assign.role.includes('ฮะดีษ') ||
+        assign.role.includes('ฟิกฮฺ') ||
+        assign.role.includes('ฟิกฮ์') ||
+        assign.role.includes('อากีดะ') ||
+        assign.role.includes('อะกีดะ')
+      ) {
         msg += `📝 ${assign.role}${assign.topic ? ' ' + assign.topic : ''} (${honorific})\n`;
       } else if (assign.role.includes('ข่าว')) {
         msg += `✍️ ${assign.role} (${honorific})\n`;
@@ -283,7 +290,12 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
                       <span className="text-lg">
                         {assign.role.includes('ตัฟซีร')
                           ? '📖'
-                          : assign.role.includes('ฮาดิษ') || assign.role.includes('ฮะดีษ')
+                          : assign.role.includes('ฮาดิษ') ||
+                            assign.role.includes('ฮะดีษ') ||
+                            assign.role.includes('ฟิกฮฺ') ||
+                            assign.role.includes('ฟิกฮ์') ||
+                            assign.role.includes('อากีดะ') ||
+                            assign.role.includes('อะกีดะ')
                           ? '📝'
                           : assign.role.includes('ดำเนินรายการ')
                           ? '🎙️'
@@ -410,63 +422,147 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
               </button>
             </div>
 
-            <div className="space-y-2">
-              {editAssignments.map((assign, idx) => (
-                <div
-                  key={idx}
-                  className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2"
-                >
-                  <div className="flex items-center gap-2">
+            <div className="space-y-3">
+              {editAssignments.map((assign, idx) => {
+                const isPresetRole = ['ตัฟซีร', 'ฮาดิษ', 'อัลฟิกฮฺ', 'อากีดะห์', 'ข่าว', 'ดำเนินรายการ'].includes(assign.role);
+                const isKnowledgeRole = ['ฮาดิษ', 'อัลฟิกฮฺ', 'อากีดะห์'].includes(assign.role);
+
+                return (
+                  <div
+                    key={idx}
+                    className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5"
+                  >
+                    <div className="flex items-center gap-2">
+                      {/* เมนูเลือกหน้าที่หลัก */}
+                      <select
+                        value={isPresetRole ? assign.role : 'อื่นๆ'}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = [...editAssignments];
+                          if (val === 'อื่นๆ') {
+                            updated[idx].role = '';
+                          } else {
+                            updated[idx].role = val;
+                          }
+                          setEditAssignments(updated);
+                        }}
+                        className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:ring-1 focus:ring-emerald-500"
+                      >
+                        <optgroup label="หมวดวิชาความรู้">
+                          <option value="ฮาดิษ">ฮาดิษ</option>
+                          <option value="อัลฟิกฮฺ">อัลฟิกฮฺ</option>
+                          <option value="อากีดะห์">อากีดะห์</option>
+                          <option value="ตัฟซีร">ตัฟซีร</option>
+                        </optgroup>
+                        <optgroup label="บทบาททั่วไป">
+                          <option value="ข่าว">ข่าว</option>
+                          <option value="ดำเนินรายการ">ดำเนินรายการ</option>
+                          <option value="อื่นๆ">อื่นๆ (ระบุเอง)</option>
+                        </optgroup>
+                      </select>
+
+                      {/* เลือกสมาชิกผู้รับผิดชอบ */}
+                      <select
+                        value={assign.member_id}
+                        onChange={(e) => {
+                          const updated = [...editAssignments];
+                          updated[idx].member_id = e.target.value;
+                          setEditAssignments(updated);
+                        }}
+                        className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800"
+                      >
+                        {data.members.map((m) => (
+                          <option key={m.member_id} value={m.member_id}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* ปุ่มลบหน้าที่ */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAssignment(idx)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
+                        title="ลบหน้าที่นี้"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+
+                    {/* แถบตัวเลือกด่วน "ฮาดิษ, อัลฟิกฮฺ, อากีดะห์, อื่นๆ" */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                      <span className="text-[10px] text-slate-400 font-medium shrink-0">เลือกวิชา:</span>
+                      {['ฮาดิษ', 'อัลฟิกฮฺ', 'อากีดะห์', 'อื่นๆ'].map((opt) => {
+                        const isSelected =
+                          opt === 'อื่นๆ'
+                            ? !['ฮาดิษ', 'อัลฟิกฮฺ', 'อากีดะห์', 'ตัฟซีร', 'ข่าว', 'ดำเนินรายการ'].includes(assign.role)
+                            : assign.role === opt;
+
+                        return (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => {
+                              const updated = [...editAssignments];
+                              if (opt === 'อื่นๆ') {
+                                if (isKnowledgeRole) {
+                                  updated[idx].role = '';
+                                }
+                              } else {
+                                updated[idx].role = opt;
+                              }
+                              setEditAssignments(updated);
+                            }}
+                            className={`px-2 py-0.5 rounded-lg text-[11px] font-medium transition-all ${
+                              isSelected
+                                ? 'bg-amber-500 text-white shadow-2xs font-bold'
+                                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* ช่องกรอกข้อความเมื่อเลือก "อื่นๆ" */}
+                    {!isPresetRole && (
+                      <input
+                        type="text"
+                        value={assign.role}
+                        onChange={(e) => {
+                          const updated = [...editAssignments];
+                          updated[idx].role = e.target.value;
+                          setEditAssignments(updated);
+                        }}
+                        placeholder="พิมพ์ชื่อหน้าที่/บทบาท เช่น ตัจญ์วีด, ดุอาอ์, อาหารว่าง"
+                        className="w-full px-2.5 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      />
+                    )}
+
+                    {/* ช่องกรอกหัวข้อ/รายละเอียด */}
                     <input
                       type="text"
-                      value={assign.role}
+                      value={assign.topic || ''}
                       onChange={(e) => {
                         const updated = [...editAssignments];
-                        updated[idx].role = e.target.value;
+                        updated[idx].topic = e.target.value;
                         setEditAssignments(updated);
                       }}
-                      placeholder="บทบาทหน้าที่ เช่น ตัฟซีร, ฮาดิษ"
-                      className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold"
+                      placeholder={
+                        assign.role.includes('ตัฟซีร')
+                          ? 'เช่น ซูเราะฮฺ อัลฆอชิยะฮ์ อายัต 8 - 14'
+                          : assign.role === 'อัลฟิกฮฺ'
+                          ? 'เช่น บทเรื่องการละหมาด หรือเงื่อนไขวุฎูอ์'
+                          : assign.role === 'อากีดะห์'
+                          ? 'เช่น เตาฮีด 3 ประการ'
+                          : 'หัวข้อ หรือรายละเอียดเพิ่มเติม (ถ้ามี)'
+                      }
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700"
                     />
-
-                    <select
-                      value={assign.member_id}
-                      onChange={(e) => {
-                        const updated = [...editAssignments];
-                        updated[idx].member_id = e.target.value;
-                        setEditAssignments(updated);
-                      }}
-                      className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
-                    >
-                      {data.members.map((m) => (
-                        <option key={m.member_id} value={m.member_id}>
-                          {m.name}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveAssignment(idx)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg"
-                    >
-                      <Trash2 size={14} />
-                    </button>
                   </div>
-
-                  <input
-                    type="text"
-                    value={assign.topic || ''}
-                    onChange={(e) => {
-                      const updated = [...editAssignments];
-                      updated[idx].topic = e.target.value;
-                      setEditAssignments(updated);
-                    }}
-                    placeholder="หัวข้อ/รายละเอียด (เช่น ซูเราะฮฺ อัลฆอชิยะฮ์ อายัต 8 - 14)"
-                    className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
-                  />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
