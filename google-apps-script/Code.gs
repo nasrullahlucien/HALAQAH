@@ -2,23 +2,8 @@
  * ==========================================================================
  * ระบบบันทึกหะละเกาะฮฺ (Halaqah Recording System) - Backend Google Apps Script
  * ==========================================================================
- * 
- * วิธีการติดตั้งและเริ่มใช้งาน:
- * 1. เปิด Google Sheets ใหม่ที่ต้องการใช้เก็บข้อมูล
- * 2. ไปที่ Extensions (ส่วนขยาย) > Apps Script
- * 3. คัดลอกโค้ดทั้งหมดในไฟล์นี้ไปวางแทนที่โค้ดเดิมใน Code.gs
- * 4. รันฟังก์ชัน `initialSetup()` ครั้งแรกเพื่อสร้างชีต หัวตาราง และข้อมูลตัวอย่าง
- * 5. ไปที่ Project Settings (ไอคอนฟันเฟืองด้านซ้าย) > Script Properties
- *    - หรือรัน `setAdminPin("123456")` เพื่อตั้งรหัส PIN ผู้ดูแลระบบ (เปลี่ยนเป็นรหัสของคุณเอง)
- * 6. กดปุ่ม Deploy (การทำให้ใช้งานได้) > New deployment (การทำให้ใช้งานได้ใหม่)
- *    - เลือกประเภท: Web app
- *    - Description: "Halaqah API v1"
- *    - Execute as: "Me" (ฉัน)
- *    - Who has access: "Anyone" (ทุกคน)
- * 7. คัดลอก Web App URL ไปใส่ในตัวแปร VITE_API_URL ในไฟล์ .env ของหน้าเว็บ
  */
 
-// ชื่อชีตทั้งหมดในระบบ
 const SHEETS = {
   MEMBERS: 'Members',
   SESSIONS: 'Sessions',
@@ -32,149 +17,150 @@ const DEFAULT_PIN_PROPERTY = 'ADMIN_PIN';
 const DEFAULT_PIN_VALUE = '123456';
 
 /**
- * ฟังก์ชันสร้างชีตเริ่มต้น พร้อมกำหนดหัวตารางและข้อมูลตัวอย่าง
- * ให้กดรันฟังก์ชันนี้ 1 ครั้งหลังจากติดตั้งโค้ด
+ * ฟังก์ชันนำเข้าข้อมูลจริงจากชีตเดิม (แบบบันทึกเก็บเงินฮะละเกาะฮฺ)
+ * ให้เลือกฟังก์ชัน `importOriginalSheetData` แล้วกดปุ่ม Run (เรียกใช้) ด้านบน 1 ครั้ง
  */
-function initialSetup() {
+function importOriginalSheetData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // 1. ชีต Members
+  // 1. ชีต Members (7 คนตามชีตเดิม พร้อมยอดยกมาจาก ท.1)
   let membersSheet = ss.getSheetByName(SHEETS.MEMBERS);
-  if (!membersSheet) {
-    membersSheet = ss.insertSheet(SHEETS.MEMBERS);
-  }
+  if (!membersSheet) membersSheet = ss.insertSheet(SHEETS.MEMBERS);
   membersSheet.clear();
   membersSheet.appendRow(['member_id', 'name', 'status', 'initial_balance', 'created_at']);
   membersSheet.getRange(1, 1, 1, 5).setFontWeight('bold').setBackground('#E2F0D9');
-  
-  // ข้อมูลตัวอย่างสมาชิก
-  const sampleMembers = [
-    ['M01', 'อับดุลลอฮฺ', 'active', 0, new Date().toISOString()],
-    ['M02', 'มุฮัมมัด', 'active', 0, new Date().toISOString()],
-    ['M03', 'อะหมัด', 'active', 0, new Date().toISOString()],
-    ['M04', 'อิบรอฮีม', 'active', 0, new Date().toISOString()],
-    ['M05', 'ยูซุฟ', 'active', 0, new Date().toISOString()]
-  ];
-  sampleMembers.forEach(row => membersSheet.appendRow(row));
 
-  // 2. ชีต Sessions
+  const membersData = [
+    ['M01', 'มะรอมือลี สาแมง', 'active', 40, '2025-07-02 09:00:00'],
+    ['M02', 'มุสตาฟา แวดอเลาะ', 'active', 0, '2025-07-02 09:00:00'],
+    ['M05', 'อัยมาน สอรี', 'active', 80, '2025-07-02 09:00:00'],
+    ['M06', 'นัสรูลเลาะห์ อภิบาลแบ', 'active', 100, '2025-07-02 09:00:00'],
+    ['M07', 'ซาการียา แม', 'active', 80, '2025-07-02 09:00:00'],
+    ['M09', 'มุชริฟ ยามา', 'active', 0, '2026-07-01 09:00:00'],
+    ['M10', 'อารีฟ ดือราโอะ', 'active', 0, '2026-07-08 09:00:00']
+  ];
+  membersData.forEach(row => membersSheet.appendRow(row));
+
+  // 2. ชีต Sessions (7 งวดตามวันที่ในชีตเดิม)
   let sessionsSheet = ss.getSheetByName(SHEETS.SESSIONS);
-  if (!sessionsSheet) {
-    sessionsSheet = ss.insertSheet(SHEETS.SESSIONS);
-  }
+  if (!sessionsSheet) sessionsSheet = ss.insertSheet(SHEETS.SESSIONS);
   sessionsSheet.clear();
   sessionsSheet.appendRow(['session_id', 'session_date', 'amount_per_session', 'topic_or_note', 'created_at']);
   sessionsSheet.getRange(1, 1, 1, 5).setFontWeight('bold').setBackground('#E2F0D9');
 
-  // ตัวอย่างงวดการนัดพบ
-  const sampleSessions = [
-    ['S001', '2026-10-04', 20, 'ปฐมนิเทศและเป้าหมายกลุ่ม', new Date().toISOString()],
-    ['S002', '2026-10-18', 20, 'ตัฟซีร ซูเราะฮฺ อัลฟาติหะฮฺ', new Date().toISOString()],
-    ['S003', '2026-11-01', 20, 'มารยาทการแสวงหาความรู้', new Date().toISOString()]
+  const sessionsData = [
+    ['S001', '2025-07-02', 20, 'งวดวันที่ 2/7/68', '2025-07-02 09:00:00'],
+    ['S002', '2025-07-09', 20, 'งวดวันที่ 9/7/68', '2025-07-09 09:00:00'],
+    ['S003', '2026-07-01', 20, 'งวดวันที่ 01/07/69', '2026-07-01 09:00:00'],
+    ['S004', '2026-07-08', 20, 'งวดวันที่ 8/7/69', '2026-07-08 09:00:00'],
+    ['S005', '2026-07-15', 20, 'งวดวันที่ 15/7/69', '2026-07-15 09:00:00'],
+    ['S006', '2026-08-19', 20, 'งวดวันที่ 19/8/26', '2026-08-19 09:00:00'],
+    ['S007', '2026-09-16', 20, 'งวดวันที่ 16/9/26', '2026-09-16 09:00:00']
   ];
-  sampleSessions.forEach(row => sessionsSheet.appendRow(row));
+  sessionsData.forEach(row => sessionsSheet.appendRow(row));
 
-  // 3. ชีต Payments
+  // 3. ชีต Payments (รายการรับเงินในแต่ละงวด รวม 510 บาท + ยอดยกมา 300 = 810 บาท)
   let paymentsSheet = ss.getSheetByName(SHEETS.PAYMENTS);
-  if (!paymentsSheet) {
-    paymentsSheet = ss.insertSheet(SHEETS.PAYMENTS);
-  }
+  if (!paymentsSheet) paymentsSheet = ss.insertSheet(SHEETS.PAYMENTS);
   paymentsSheet.clear();
   paymentsSheet.appendRow(['payment_id', 'date', 'member_id', 'amount', 'note', 'created_at']);
   paymentsSheet.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#E2F0D9');
 
-  // ตัวอย่างการชำระเงิน
-  const samplePayments = [
-    ['P001', '2026-10-04', 'M01', 60, 'จ่ายล่วงหน้า 3 ครั้ง (โอน)', new Date().toISOString()],
-    ['P002', '2026-10-04', 'M02', 40, 'จ่าย 2 ครั้ง', new Date().toISOString()],
-    ['P003', '2026-10-18', 'M03', 20, 'จ่ายเงินสดครั้งที่ 2', new Date().toISOString()],
-    ['P004', '2026-11-01', 'M04', 60, 'โอนรวม 3 ครั้ง', new Date().toISOString()]
-  ];
-  samplePayments.forEach(row => paymentsSheet.appendRow(row));
+  const paymentsData = [
+    // งวด 2025-07-02 (รวม 100 บาท)
+    ['P01_01', '2025-07-02', 'M01', 20, 'งวด 2/7/68', '2025-07-02 09:00:00'],
+    ['P01_02', '2025-07-02', 'M02', 20, 'งวด 2/7/68', '2025-07-02 09:00:00'],
+    ['P01_05', '2025-07-02', 'M05', 20, 'งวด 2/7/68', '2025-07-02 09:00:00'],
+    ['P01_06', '2025-07-02', 'M06', 20, 'งวด 2/7/68', '2025-07-02 09:00:00'],
+    ['P01_07', '2025-07-02', 'M07', 20, 'งวด 2/7/68', '2025-07-02 09:00:00'],
 
-  // 4. ชีต Expenses
+    // งวด 2025-07-09 (รวม 80 บาท)
+    ['P02_01', '2025-07-09', 'M01', 20, 'งวด 9/7/68', '2025-07-09 09:00:00'],
+    ['P02_02', '2025-07-09', 'M02', 20, 'งวด 9/7/68', '2025-07-09 09:00:00'],
+    ['P02_06', '2025-07-09', 'M06', 20, 'งวด 9/7/68', '2025-07-09 09:00:00'],
+    ['P02_07', '2025-07-09', 'M07', 20, 'งวด 9/7/68', '2025-07-09 09:00:00'],
+
+    // งวด 2026-07-01 (รวม 60 บาท)
+    ['P03_02', '2026-07-01', 'M02', 20, 'งวด 01/07/69', '2026-07-01 09:00:00'],
+    ['P03_07', '2026-07-01', 'M07', 20, 'งวด 01/07/69', '2026-07-01 09:00:00'],
+    ['P03_09', '2026-07-01', 'M09', 20, 'งวด 01/07/69', '2026-07-01 09:00:00'],
+
+    // งวด 2026-07-08 (รวม 120 บาท)
+    ['P04_01', '2026-07-08', 'M01', 60, 'งวด 8/7/69 (จ่าย 60 บาท)', '2026-07-08 09:00:00'],
+    ['P04_02', '2026-07-08', 'M02', 20, 'งวด 8/7/69', '2026-07-08 09:00:00'],
+    ['P04_09', '2026-07-08', 'M09', 20, 'งวด 8/7/69', '2026-07-08 09:00:00'],
+    ['P04_10', '2026-07-08', 'M10', 20, 'งวด 8/7/69', '2026-07-08 09:00:00'],
+
+    // งวด 2026-07-15 (รวม 60 บาท)
+    ['P05_02', '2026-07-15', 'M02', 20, 'งวด 15/7/69', '2026-07-15 09:00:00'],
+    ['P05_07', '2026-07-15', 'M07', 40, 'งวด 15/7/69 (จ่าย 40 บาท)', '2026-07-15 09:00:00'],
+
+    // งวด 2026-08-19 (รวม 40 บาท)
+    ['P06_01', '2026-08-19', 'M01', 20, 'งวด 19/8/26', '2026-08-19 09:00:00'],
+    ['P06_02', '2026-08-19', 'M02', 20, 'งวด 19/8/26', '2026-08-19 09:00:00'],
+
+    // งวด 2026-09-16 (รวม 50 บาท)
+    ['P07_05', '2026-09-16', 'M05', 50, 'งวด 16/9/26 (จ่าย 50 บาท)', '2026-09-16 09:00:00']
+  ];
+  paymentsData.forEach(row => paymentsSheet.appendRow(row));
+
+  // 4. ชีต Expenses (ก๋วยเตี๋ยว ครัวมาลา 305 บาท)
   let expensesSheet = ss.getSheetByName(SHEETS.EXPENSES);
-  if (!expensesSheet) {
-    expensesSheet = ss.insertSheet(SHEETS.EXPENSES);
-  }
+  if (!expensesSheet) expensesSheet = ss.insertSheet(SHEETS.EXPENSES);
   expensesSheet.clear();
   expensesSheet.appendRow(['expense_id', 'date', 'item', 'amount', 'category', 'expense_type', 'member_id', 'deduct_from', 'receipt_url', 'created_at']);
   expensesSheet.getRange(1, 1, 1, 10).setFontWeight('bold').setBackground('#FCE4D6');
 
-  // ตัวอย่างค่าใช้จ่าย
-  const sampleExpenses = [
-    ['E001', '2026-10-04', 'สมุดบันทึกและเอกสารหะละเกาะฮฺ', 50, 'เอกสาร', 'communal', '', 'group_fund', '', new Date().toISOString()],
-    ['E002', '2026-10-18', 'น้ำดื่มและอินทผาลัม', 40, 'อาหาร/เครื่องดื่ม', 'communal', '', 'group_fund', '', new Date().toISOString()]
-  ];
-  sampleExpenses.forEach(row => expensesSheet.appendRow(row));
+  expensesSheet.appendRow([
+    'E001',
+    '2026-07-08',
+    '1. ก๋วยเตี๋ยว ครัวมาลา',
+    305,
+    'อาหาร/เครื่องดื่ม',
+    'communal',
+    '',
+    'group_fund',
+    '',
+    '2026-07-08 12:00:00'
+  ]);
 
-  // 5. ชีต Attendance
+  // 5. ชีต Attendance (เช็คชื่อ)
   let attendanceSheet = ss.getSheetByName(SHEETS.ATTENDANCE);
-  if (!attendanceSheet) {
-    attendanceSheet = ss.insertSheet(SHEETS.ATTENDANCE);
-  }
+  if (!attendanceSheet) attendanceSheet = ss.insertSheet(SHEETS.ATTENDANCE);
   attendanceSheet.clear();
   attendanceSheet.appendRow(['attendance_id', 'session_date', 'member_id', 'status', 'note', 'updated_at']);
   attendanceSheet.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#FFF2CC');
 
-  const sampleAttendance = [
-    ['2026-10-04_M01', '2026-10-04', 'M01', 'present', '', new Date().toISOString()],
-    ['2026-10-04_M02', '2026-10-04', 'M02', 'present', '', new Date().toISOString()],
-    ['2026-10-04_M03', '2026-10-04', 'M03', 'leave', 'ติดธุระครอบครัว', new Date().toISOString()],
-    ['2026-10-04_M04', '2026-10-04', 'M04', 'present', '', new Date().toISOString()],
-    ['2026-10-04_M05', '2026-10-04', 'M05', 'absent', 'ไม่สามารถติดต่อได้', new Date().toISOString()],
-    ['2026-10-18_M01', '2026-10-18', 'M01', 'present', '', new Date().toISOString()],
-    ['2026-10-18_M02', '2026-10-18', 'M02', 'present', '', new Date().toISOString()],
-    ['2026-10-18_M03', '2026-10-18', 'M03', 'present', '', new Date().toISOString()],
-    ['2026-10-18_M04', '2026-10-18', 'M04', 'present', '', new Date().toISOString()],
-    ['2026-10-18_M05', '2026-10-18', 'M05', 'leave', 'ป่วย', new Date().toISOString()]
-  ];
-  sampleAttendance.forEach(row => attendanceSheet.appendRow(row));
-
   // 6. ชีต Config
   let configSheet = ss.getSheetByName(SHEETS.CONFIG);
-  if (!configSheet) {
-    configSheet = ss.insertSheet(SHEETS.CONFIG);
-  }
+  if (!configSheet) configSheet = ss.insertSheet(SHEETS.CONFIG);
   configSheet.clear();
   configSheet.appendRow(['key', 'value', 'description']);
   configSheet.getRange(1, 1, 1, 3).setFontWeight('bold').setBackground('#D9E1F2');
-  configSheet.appendRow(['group_name', 'กลุ่มหะละเกาะฮฺอัล-อิคลาศ', 'ชื่อกลุ่มหะละเกาะฮฺ']);
+  configSheet.appendRow(['group_name', 'แบบบันทึกเก็บเงินฮะละเกาะฮฺ', 'ชื่อกลุ่มฮะละเกาะฮฺ']);
   configSheet.appendRow(['default_amount_per_session', '20', 'ยอดเก็บเงินต่อครั้งมาตรฐาน']);
 
-  // กำหนดรหัส PIN เริ่มต้น
+  // กำหนดรหัส PIN เริ่มต้นถ้ายังไม่มี
   const props = PropertiesService.getScriptProperties();
   if (!props.getProperty(DEFAULT_PIN_PROPERTY)) {
     props.setProperty(DEFAULT_PIN_PROPERTY, DEFAULT_PIN_VALUE);
   }
 
-  // ลบ Sheet1 เริ่มต้นถ้ามี
-  const defaultSheet = ss.getSheetByName('Sheet1') || ss.getSheetByName('แผ่นงาน1');
-  if (defaultSheet && ss.getSheets().length > 1) {
-    try {
-      ss.deleteSheet(defaultSheet);
-    } catch (e) {}
-  }
-
-  Logger.log('สร้างชีตและข้อมูลตัวอย่างเรียบร้อยแล้ว! รหัส PIN เริ่มต้นคือ: ' + DEFAULT_PIN_VALUE);
+  Logger.log('นำเข้าข้อมูลเดิมสำเร็จสมบูรณ์! ยอดรับรวม: 810 บ., รายจ่าย: 305 บ., คงเหลือ: 505 บ.');
 }
 
-/**
- * ฟังก์ชันสำหรับเปลี่ยนรหัส PIN ผู้ดูแลระบบ
- */
+function initialSetup() {
+  importOriginalSheetData();
+}
+
 function setAdminPin(newPin) {
   if (!newPin || String(newPin).trim().length < 4) {
     throw new Error('รหัส PIN ต้องมีความยาวอย่างน้อย 4 หลัก');
   }
   PropertiesService.getScriptProperties().setProperty(DEFAULT_PIN_PROPERTY, String(newPin).trim());
-  Logger.log('เปลี่ยนรหัส PIN ผู้ดูแลระบบสำเร็จแล้ว');
+  Logger.log('เปลี่ยนรหัส PIN ผู้ดูแลระบบสำเร็จแล้ว: ' + newPin);
 }
 
-/**
- * ==========================================================================
- * GET Request: คืนค่าข้อมูลทั้งหมดสำหรับแสดงผลบนเว็บ
- * ==========================================================================
- */
 function doGet(e) {
   try {
     const data = getAllData();
@@ -191,15 +177,9 @@ function doGet(e) {
   }
 }
 
-/**
- * ==========================================================================
- * POST Request: รับคำสั่งบันทึก / แก้ไข / ลบข้อมูล (ต้องผ่านการตรวจ PIN)
- * ==========================================================================
- */
 function doPost(e) {
-  // ใช้ Lock ป้องกันการบันทึกข้อมูลซ้อนกัน (Race Conditions)
   const lock = LockService.getScriptLock();
-  const hasLock = lock.tryLock(15000); // รอสูงสุด 15 วินาที
+  const hasLock = lock.tryLock(15000);
   
   if (!hasLock) {
     return createJsonResponse({
@@ -220,7 +200,6 @@ function doPost(e) {
     const adminPin = requestData.admin_pin;
     const payload = requestData.payload || {};
 
-    // ตรวจสอบความถูกต้องของ PIN
     const storedPin = PropertiesService.getScriptProperties().getProperty(DEFAULT_PIN_PROPERTY) || DEFAULT_PIN_VALUE;
     if (!adminPin || String(adminPin).trim() !== String(storedPin).trim()) {
       return createJsonResponse({
@@ -271,7 +250,6 @@ function doPost(e) {
         throw new Error('ไม่รู้จักคำสั่ง: ' + action);
     }
 
-    // ดึงข้อมูลล่าสุดคืนกลับไปให้หน้าเว็บเพื่อให้อัปเดต State ทันที
     const refreshedData = getAllData();
 
     return createJsonResponse({
@@ -291,9 +269,6 @@ function doPost(e) {
   }
 }
 
-/**
- * อ่านข้อมูลทั้งหมดจากทุกชีตแล้วแปลงเป็น JSON Object
- */
 function getAllData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -303,7 +278,6 @@ function getAllData() {
   const expenses = readSheetData(ss.getSheetByName(SHEETS.EXPENSES));
   const attendance = readSheetData(ss.getSheetByName(SHEETS.ATTENDANCE));
   
-  // แปลง Config ให้เป็น Key-Value Object
   const configRows = readSheetData(ss.getSheetByName(SHEETS.CONFIG));
   const config = {};
   configRows.forEach(row => {
@@ -341,9 +315,9 @@ function getAllData() {
       item: String(e.item || ''),
       amount: Number(e.amount || 0),
       category: String(e.category || 'อื่นๆ'),
-      expense_type: String(e.expense_type || 'communal'), // 'communal' | 'individual'
+      expense_type: String(e.expense_type || 'communal'),
       member_id: String(e.member_id || ''),
-      deduct_from: String(e.deduct_from || 'group_fund'), // 'group_fund' | 'member_balance'
+      deduct_from: String(e.deduct_from || 'group_fund'),
       receipt_url: String(e.receipt_url || ''),
       created_at: e.created_at ? formatDateString(e.created_at) : ''
     })).sort((a, b) => b.date.localeCompare(a.date)),
@@ -359,9 +333,6 @@ function getAllData() {
   };
 }
 
-/**
- * บันทึกรายรับ (Payments)
- */
 function handleAddPayment(payload) {
   const memberId = String(payload.member_id || '').trim();
   const amount = Number(payload.amount);
@@ -375,7 +346,6 @@ function handleAddPayment(payload) {
   const sheet = ss.getSheetByName(SHEETS.PAYMENTS);
   if (!sheet) throw new Error('ไม่พบชีต Payments');
 
-  // ตรวจสอบว่าสมาชิกมีอยู่จริง
   validateMemberExists(ss, memberId);
 
   const paymentId = 'P' + Utilities.formatDate(new Date(), 'GMT+7', 'yyyyMMdd_HHmmss') + '_' + Math.floor(Math.random() * 1000);
@@ -392,9 +362,6 @@ function handleAddPayment(payload) {
   return { payment_id: paymentId, message: 'บันทึกรายรับสำเร็จ' };
 }
 
-/**
- * บันทึกรายจ่าย (Expenses)
- */
 function handleAddExpense(payload) {
   const item = String(payload.item || '').trim();
   const amount = Number(payload.amount);
@@ -416,7 +383,6 @@ function handleAddExpense(payload) {
       deductFrom = 'group_fund';
     }
   } else {
-    // ส่วนกลาง บังคับหักจากกองกลางเสมอ
     deductFrom = 'group_fund';
   }
 
@@ -441,10 +407,6 @@ function handleAddExpense(payload) {
   return { expense_id: expenseId, message: 'บันทึกรายจ่ายสำเร็จ' };
 }
 
-/**
- * บันทึกการเช็คชื่อเข้าพบ (Attendance) แบบชุด (Batch)
- * payload: { session_date: 'YYYY-MM-DD', records: [{ member_id: 'M01', status: 'present', note: '' }, ...] }
- */
 function handleRecordAttendance(payload) {
   const sessionDate = formatDateOnly(payload.session_date);
   const records = payload.records;
@@ -459,13 +421,12 @@ function handleRecordAttendance(payload) {
   if (!sheet) throw new Error('ไม่พบชีต Attendance');
 
   const data = sheet.getDataRange().getValues();
-  // ค้นหารายการเดิมตาม session_date เพื่ออัปเดต หรือถ้าไม่มีให้เพิ่มใหม่
-  const existingRowMap = {}; // key: session_date_member_id -> rowIndex (1-based)
+  const existingRowMap = {};
   for (let i = 1; i < data.length; i++) {
     const rowDate = formatDateOnly(data[i][1]);
     const rowMember = String(data[i][2]);
     const key = `${rowDate}_${rowMember}`;
-    existingRowMap[key] = i + 1; // 1-based index in sheet
+    existingRowMap[key] = i + 1;
   }
 
   records.forEach(rec => {
@@ -476,11 +437,9 @@ function handleRecordAttendance(payload) {
     const nowIso = new Date().toISOString();
 
     if (existingRowMap[key]) {
-      // อัปเดตแถวเดิม
       const rIdx = existingRowMap[key];
       sheet.getRange(rIdx, 4, 1, 3).setValues([[status, note, nowIso]]);
     } else {
-      // เพิ่มแถวใหม่
       sheet.appendRow([key, sessionDate, mId, status, note, nowIso]);
     }
   });
@@ -488,9 +447,6 @@ function handleRecordAttendance(payload) {
   return { message: `บันทึกการเช็คชื่อ ${records.length} คน สำหรับวันที่ ${sessionDate} เรียบร้อยแล้ว` };
 }
 
-/**
- * เพิ่มงวดการนัดพบใหม่ (Sessions)
- */
 function handleAddSession(payload) {
   const sessionDate = formatDateOnly(payload.session_date);
   const amount = Number(payload.amount_per_session || 20);
@@ -503,7 +459,6 @@ function handleAddSession(payload) {
   const sheet = ss.getSheetByName(SHEETS.SESSIONS);
   if (!sheet) throw new Error('ไม่พบชีต Sessions');
 
-  // ตรวจสอบว่าวันที่ซ้ำหรือไม่
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (formatDateOnly(data[i][1]) === sessionDate) {
@@ -517,9 +472,6 @@ function handleAddSession(payload) {
   return { session_id: sessionId, message: 'เพิ่มงวดนัดพบเรียบร้อยแล้ว' };
 }
 
-/**
- * เพิ่มสมาชิกใหม่ (Members)
- */
 function handleAddMember(payload) {
   const name = String(payload.name || '').trim();
   const initialBalance = Number(payload.initial_balance || 0);
@@ -530,7 +482,6 @@ function handleAddMember(payload) {
   const sheet = ss.getSheetByName(SHEETS.MEMBERS);
   if (!sheet) throw new Error('ไม่พบชีต Members');
 
-  // หารหัสสมาชิกถัดไป เช่น M01, M02, ...
   const data = sheet.getDataRange().getValues();
   let maxIdNum = 0;
   for (let i = 1; i < data.length; i++) {
@@ -547,9 +498,6 @@ function handleAddMember(payload) {
   return { member_id: nextId, message: 'เพิ่มสมาชิกเรียบร้อยแล้ว' };
 }
 
-/**
- * อัปเดตข้อมูลสมาชิก (สถานะ, ชื่อ)
- */
 function handleUpdateMember(payload) {
   const memberId = String(payload.member_id || '').trim();
   if (!memberId) throw new Error('กรุณาระบุรหัสสมาชิก');
@@ -570,9 +518,6 @@ function handleUpdateMember(payload) {
   throw new Error(`ไม่พบสมาชิกรหัส ${memberId}`);
 }
 
-/**
- * ลบรายการรับเงิน
- */
 function handleDeletePayment(payload) {
   const paymentId = String(payload.payment_id || '').trim();
   if (!paymentId) throw new Error('กรุณาระบุ payment_id');
@@ -591,9 +536,6 @@ function handleDeletePayment(payload) {
   throw new Error(`ไม่พบรายการรับเงิน ${paymentId}`);
 }
 
-/**
- * ลบรายการค่าใช้จ่าย
- */
 function handleDeleteExpense(payload) {
   const expenseId = String(payload.expense_id || '').trim();
   if (!expenseId) throw new Error('กรุณาระบุ expense_id');
@@ -612,12 +554,6 @@ function handleDeleteExpense(payload) {
   throw new Error(`ไม่พบรายการจ่ายเงิน ${expenseId}`);
 }
 
-/**
- * ==========================================================================
- * Helper Utilities
- * ==========================================================================
- */
-
 function readSheetData(sheet) {
   if (!sheet) return [];
   const range = sheet.getDataRange();
@@ -629,7 +565,6 @@ function readSheetData(sheet) {
 
   for (let i = 1; i < values.length; i++) {
     const row = values[i];
-    // ถ้าแถวว่างเปล่าทั้งหมด ให้ข้าม
     if (row.every(cell => cell === '' || cell === null)) continue;
 
     const rowObj = {};
