@@ -16,17 +16,13 @@ import { executeAdminAction } from '../services/api';
 
 interface AmanahViewProps {
   data: AppData;
-  isAdmin: boolean;
-  adminPin: string;
-  onOpenAdminModal: () => void;
+  adminPin?: string;
   onRefreshData: () => void;
 }
 
 export const AmanahView: React.FC<AmanahViewProps> = ({
   data,
-  isAdmin,
   adminPin,
-  onOpenAdminModal,
   onRefreshData
 }) => {
   const amanahList = data.amanah || [];
@@ -154,11 +150,6 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
   };
 
   const handleSave = async () => {
-    if (!isAdmin) {
-      onOpenAdminModal();
-      return;
-    }
-
     setSaving(true);
     const newAmanah: AmanahRecord = {
       session_date: editSessionDate,
@@ -168,7 +159,7 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
       note: editNote.trim()
     };
 
-    const res = await executeAdminAction('save_amanah', adminPin, newAmanah);
+    const res = await executeAdminAction('save_amanah', adminPin || '', newAmanah);
     setSaving(false);
 
     if (res.success) {
@@ -221,12 +212,13 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
             </div>
           </div>
 
-          {isAdmin && !isEditing && (
+          {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors shadow-2xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition-all shadow-xs active:scale-95"
             >
-              <Edit2 size={13} /> แก้ไข
+              <Edit2 size={13} />
+              <span>แก้ไข / กรอกอามานะฮ์</span>
             </button>
           )}
         </div>

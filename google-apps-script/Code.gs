@@ -226,12 +226,28 @@ function doPost(e) {
     const adminPin = requestData.admin_pin;
     const payload = requestData.payload || {};
 
-    const storedPin = PropertiesService.getScriptProperties().getProperty(DEFAULT_PIN_PROPERTY) || DEFAULT_PIN_VALUE;
-    if (!adminPin || String(adminPin).trim() !== String(storedPin).trim()) {
-      return createJsonResponse({
-        success: false,
-        error: 'รหัส PIN ผู้ดูแลระบบไม่ถูกต้อง ไม่สามารถดำเนินการได้'
-      });
+    // ตรวจสอบสิทธิ์ PIN: เฉพาะระบบการเงินและการเช็คชื่อที่ต้องใช้ PIN
+    // ส่วนอามานะฮ์ (save_amanah) อนุญาตให้สมาชิกทุกคนแก้ไขและกรอกได้โดยไม่ต้องล็อกอิน
+    const actionsRequiringPin = [
+      'verify_pin',
+      'add_payment',
+      'delete_payment',
+      'add_expense',
+      'delete_expense',
+      'record_attendance',
+      'add_session',
+      'add_member',
+      'update_member'
+    ];
+
+    if (actionsRequiringPin.includes(action)) {
+      const storedPin = PropertiesService.getScriptProperties().getProperty(DEFAULT_PIN_PROPERTY) || DEFAULT_PIN_VALUE;
+      if (!adminPin || String(adminPin).trim() !== String(storedPin).trim()) {
+        return createJsonResponse({
+          success: false,
+          error: 'รหัส PIN ผู้ดูแลระบบไม่ถูกต้อง ไม่สามารถดำเนินการได้'
+        });
+      }
     }
 
     let result;

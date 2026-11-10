@@ -135,9 +135,7 @@ export const App: React.FC = () => {
         {activeTab === 'amanah' && (
           <AmanahView
             data={data}
-            isAdmin={isAdmin}
             adminPin={adminPin}
-            onOpenAdminModal={() => setIsAdminModalOpen(true)}
             onRefreshData={loadData}
           />
         )}
