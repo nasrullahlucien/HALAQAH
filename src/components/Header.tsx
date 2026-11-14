@@ -59,15 +59,17 @@ export const Header: React.FC<HeaderProps> = ({
             <RefreshCw size={17} className={isLoading ? 'animate-spin text-emerald-600' : ''} />
           </button>
 
-          {/* ปุ่มตั้งค่า URL API */}
-          <button
-            onClick={onOpenSettingsModal}
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors active:scale-95"
-            title={t('dbSettings')}
-            aria-label={t('dbSettings')}
-          >
-            <Settings size={17} />
-          </button>
+          {/* ปุ่มตั้งค่า URL API (แสดงเฉพาะเมื่อล็อกอินเป็นเหรัญญิก/ผู้ดูแลเท่านั้น) */}
+          {isAdmin && (
+            <button
+              onClick={onOpenSettingsModal}
+              className="p-2 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors active:scale-95 border border-emerald-200"
+              title={t('dbSettings')}
+              aria-label={t('dbSettings')}
+            >
+              <Settings size={17} />
+            </button>
+          )}
 
           {/* ปุ่มโหมดผู้ดูแล */}
           <button
