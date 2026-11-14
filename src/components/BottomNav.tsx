@@ -1,5 +1,6 @@
 import React from 'react';
 import { LayoutDashboard, Table, ArrowLeftRight, CheckSquare, Users, BookOpen } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export type TabType = 'dashboard' | 'matrix' | 'transactions' | 'attendance' | 'amanah' | 'members';
 
@@ -14,13 +15,15 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onTabChange,
   overdueCount
 }) => {
+  const { t } = useLanguage();
+
   const tabs = [
-    { id: 'dashboard' as TabType, label: 'สรุปภาพรวม', icon: LayoutDashboard },
-    { id: 'matrix' as TabType, label: 'ตารางเงิน', icon: Table, badge: overdueCount > 0 ? overdueCount : undefined },
-    { id: 'transactions' as TabType, label: 'รับ-จ่าย', icon: ArrowLeftRight },
-    { id: 'attendance' as TabType, label: 'เช็คชื่อ', icon: CheckSquare },
-    { id: 'amanah' as TabType, label: 'อามานะฮ์', icon: BookOpen },
-    { id: 'members' as TabType, label: 'สมาชิก', icon: Users },
+    { id: 'dashboard' as TabType, label: t('tabDashboard'), icon: LayoutDashboard },
+    { id: 'matrix' as TabType, label: t('tabMatrix'), icon: Table, badge: overdueCount > 0 ? overdueCount : undefined },
+    { id: 'transactions' as TabType, label: t('tabTransactions'), icon: ArrowLeftRight },
+    { id: 'attendance' as TabType, label: t('tabAttendance'), icon: CheckSquare },
+    { id: 'amanah' as TabType, label: t('tabAmanah'), icon: BookOpen },
+    { id: 'members' as TabType, label: t('tabMembers'), icon: Users },
   ];
 
   return (

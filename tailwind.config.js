@@ -22,6 +22,7 @@ export default {
       },
       fontFamily: {
         sans: [
+          'Cairo',
           'Sarabun',
           'Prompt',
           'system-ui',
@@ -30,6 +31,12 @@ export default {
           '"Segoe UI"',
           'Roboto',
           'sans-serif',
+        ],
+        arabic: [
+          'Cairo',
+          'Amiri',
+          'Tahoma',
+          'sans-serif'
         ]
       }
     },

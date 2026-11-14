@@ -13,6 +13,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { executeAdminAction } from '../services/api';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface AmanahViewProps {
   data: AppData;
@@ -25,6 +26,7 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
   adminPin,
   onRefreshData
 }) => {
+  const { t } = useLanguage();
   const amanahList = data.amanah || [];
 
   // เรียงลำดับ Amanah ตามวันที่ จากใหม่สุดไปเก่าสุด
@@ -201,13 +203,13 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-1.5">
-                <span>อามานะฮ์ประจำสัปดาห์</span>
+                <span>{t('amanahTitle')}</span>
                 <span className="text-[10px] bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full">
-                  หน้าที่รับผิดชอบ
+                  {t('amanahBadge')}
                 </span>
               </h2>
               <p className="text-xs text-slate-500">
-                มอบหมายบทบาทและภารกิจสำหรับนัดพบสัปดาห์ถัดไป
+                {t('amanahSubtitle')}
               </p>
             </div>
           </div>
@@ -218,7 +220,7 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
               className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition-all shadow-xs active:scale-95"
             >
               <Edit2 size={13} />
-              <span>แก้ไข / กรอกอามานะฮ์</span>
+              <span>{t('btnEditAmanah')}</span>
             </button>
           )}
         </div>
@@ -234,7 +236,7 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
             >
               {sortedAmanah.map((a) => (
                 <option key={a.session_date} value={a.session_date}>
-                  นัดพบสัปดาห์ถัดไป: {formatThaiDate(a.session_date)}
+                  {t('sessionNextWeekPrefix')} {formatThaiDate(a.session_date)}
                 </option>
               ))}
               {!sortedAmanah.some((a) => a.session_date === selectedDate) && (
@@ -257,7 +259,7 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
                 السلام عليكم ورحمة الله وبركاته
               </p>
               <h3 className="text-base font-extrabold text-slate-900 mt-1">
-                ⭐ ฮาลาเกาะฮฺ สัปดาห์ถัดไป
+                {t('cardAmanahHeader')}
               </h3>
               <p className="text-xs font-bold text-emerald-700 font-mono mt-0.5">
                 {formatThaiDate(selectedDate)}
@@ -267,7 +269,7 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
             {/* รายการหน้าที่รับผิดชอบ (Roles List) */}
             <div className="space-y-2.5">
               <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                หน้าที่รับผิดชอบแต่ละคน
+                {t('rolesSectionTitle')}
               </h4>
               {currentRecord?.assignments.map((assign, idx) => {
                 const member = data.members.find((m) => m.member_id === assign.member_id);
@@ -316,7 +318,7 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
             {currentRecord?.general_tasks && currentRecord.general_tasks.length > 0 && (
               <div className="p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/80 space-y-2">
                 <h4 className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
-                  <span className="text-base">✅✅</span> ภารกิจผู้ศรัทธา
+                  <span className="text-base">✅✅</span> {t('generalTasksTitle')}
                 </h4>
                 <div className="space-y-1.5 pl-1">
                   {currentRecord.general_tasks.map((task, idx) => (
@@ -334,7 +336,7 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
               <div className="p-3 bg-white rounded-2xl border border-slate-200 flex items-center gap-2 text-xs text-slate-700">
                 <span className="text-base">🏍️🚙🚲</span>
                 <div>
-                  <span className="font-semibold text-slate-900">สถานที่: </span>
+                  <span className="font-semibold text-slate-900">{t('locationTitle')} </span>
                   <span>{currentRecord.location}</span>
                 </div>
               </div>
@@ -359,7 +361,7 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
               }`}
             >
               {copied ? <Check size={16} /> : <Copy size={16} className="text-emerald-600" />}
-              <span>{copied ? 'คัดลอกข้อความแล้ว!' : 'คัดลอกข้อความ LINE'}</span>
+              <span>{copied ? t('copiedDone') : t('btnCopyLine')}</span>
             </button>
 
             <button
@@ -367,7 +369,7 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
               className="py-3 px-4 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-[#06C755]/20 transition-all active:scale-98"
             >
               <MessageCircle size={16} />
-              <span>ส่งเข้ากลุ่ม LINE</span>
+              <span>{t('btnShareLine')}</span>
             </button>
           </div>
         </div>
@@ -377,19 +379,19 @@ export const AmanahView: React.FC<AmanahViewProps> = ({
         /* ========================================================= */
         <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <h3 className="text-sm font-bold text-slate-900">แก้ไขข้อมูลอามานะฮ์</h3>
+            <h3 className="text-sm font-bold text-slate-900">{t('btnEditAmanah')}</h3>
             <button
               onClick={() => setIsEditing(false)}
               className="text-xs text-slate-500 hover:text-slate-800"
             >
-              ยกเลิก
+              {t('btnCancel')}
             </button>
           </div>
 
           {/* วันที่นัดพบ */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              วันที่นัดพบ (สัปดาห์ถัดไป)
+              {t('sessionNextWeekLabel')}
             </label>
             <input
               type="date"

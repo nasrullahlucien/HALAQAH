@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AppData, Member } from '../types';
 import { calculateMemberSummary, formatCurrency, formatThaiDate } from '../utils/calculations';
 import { AlertCircle, CheckCircle2, Search } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface MatrixViewProps {
   data: AppData;
@@ -16,6 +17,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
   onOpenSessionModal,
   isAdmin
 }) => {
+  const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'advance'>('all');
 
@@ -59,9 +61,9 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
       <div className="bg-white rounded-2xl border border-slate-200 p-3.5 space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-slate-900">ตารางสถานะการเงิน (Matrix)</h2>
+            <h2 className="text-base font-bold text-slate-900">{t('matrixTitle')}</h2>
             <p className="text-xs text-slate-500">
-              ตัดยอดตามงวดเก่าสุดก่อนอัตโนมัติ (FIFO) • แตะที่ชื่อเพื่อดูประวัติ
+              {t('matrixSubtitle')}
             </p>
           </div>
           {isAdmin && (
@@ -69,7 +71,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
               onClick={onOpenSessionModal}
               className="text-xs font-semibold px-2.5 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-xs"
             >
-              + เพิ่มงวดนัด
+              + {t('addSession')}
             </button>
           )}
         </div>
@@ -82,7 +84,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="ค้นหาชื่อสมาชิก..."
+              placeholder={t('searchMemberPlaceholder')}
               className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
             />
           </div>
@@ -97,7 +99,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              ทั้งหมด ({memberSummaries.length})
+              {t('filterAll')} ({memberSummaries.length})
             </button>
             <button
               onClick={() => setFilterMode('overdue')}
@@ -108,7 +110,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
               }`}
             >
               <AlertCircle size={13} />
-              <span>ค้างชำระ ({memberSummaries.filter(m => m.isOverdue).length})</span>
+              <span>{t('filterOverdue')} ({memberSummaries.filter(m => m.isOverdue).length})</span>
             </button>
             <button
               onClick={() => setFilterMode('advance')}
@@ -119,7 +121,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
               }`}
             >
               <CheckCircle2 size={13} />
-              <span>ล่วงหน้า ({memberSummaries.filter(m => m.isAdvance).length})</span>
+              <span>{t('filterAdvance')} ({memberSummaries.filter(m => m.isAdvance).length})</span>
             </button>
           </div>
         </div>
@@ -129,16 +131,16 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
       <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> ครบถ้วน
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> {t('legendPaid')}
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> บางส่วน
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> {t('legendPartial')}
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> ค้าง
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> {t('legendUnpaid')}
           </span>
         </div>
-        <span className="text-[10px] text-slate-400">เลื่อนตารางแนวนอนได้ 👉</span>
+        <span className="text-[10px] text-slate-400">{t('scrollHint')}</span>
       </div>
 
       {/* 2. ตารางหลัก (Matrix Spreadsheet View) */}
@@ -150,7 +152,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
               <tr className="bg-slate-100/90 text-slate-700 border-b border-slate-200 font-semibold">
                 {/* คอลัมน์ที่ 1: ชื่อสมาชิก (Freeze Sticky ด้านซ้าย) */}
                 <th className="sticky-col-first bg-slate-100 py-3 px-3 min-w-[130px] border-r border-slate-200 z-20">
-                  ชื่อสมาชิก
+                  {t('colMemberName')}
                 </th>
 
                 {/* คอลัมน์ Sessions แต่ละงวด */}
@@ -164,20 +166,20 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
                       {formatThaiDate(session.session_date, { yearOffset: false })}
                     </div>
                     <div className="text-[10px] text-slate-500 font-normal">
-                      งวด {idx + 1} (฿{session.amount_per_session})
+                      {t('colSessionPrefix', { num: idx + 1 })} (฿{session.amount_per_session})
                     </div>
                   </th>
                 ))}
 
                 {/* คอลัมน์สรุป */}
                 <th className="py-3 px-3 text-right min-w-[85px] bg-slate-50 border-r border-slate-200">
-                  จ่ายแล้ว
+                  {t('colTotalPaid')}
                 </th>
                 <th className="py-3 px-3 text-right min-w-[85px] bg-slate-50 border-r border-slate-200">
-                  ควรจ่าย
+                  {t('colTotalExpected')}
                 </th>
                 <th className="py-3 px-3 text-center min-w-[130px] bg-slate-100 font-bold text-slate-900">
-                  ส่วนต่างสุทธิ
+                  {t('colNetBalance')}
                 </th>
               </tr>
             </thead>
@@ -237,7 +239,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
                             )}
                             {statusType === 'unpaid' && (
                               <span className="inline-flex items-center justify-center w-full py-1 px-1.5 rounded-lg bg-rose-50 text-rose-500 font-medium text-[11px] border border-rose-200">
-                                ค้าง
+                                {t('legendUnpaid')}
                               </span>
                             )}
                           </td>
@@ -262,7 +264,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
                               -฿{formatCurrency(Math.abs(item.netBalance))}
                             </div>
                             <div className="text-[10px] text-rose-600 font-normal">
-                              (ค้าง {item.overdueSessionsCount} ครั้ง)
+                              {t('overdueTimes', { count: item.overdueSessionsCount })}
                             </div>
                           </div>
                         ) : item.isAdvance ? (
@@ -271,12 +273,12 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
                               +฿{formatCurrency(item.netBalance)}
                             </div>
                             <div className="text-[10px] text-emerald-700 font-normal">
-                              (ล่วงหน้า {item.advanceSessionsCount} ครั้ง)
+                              {t('advanceTimes', { count: item.advanceSessionsCount })}
                             </div>
                           </div>
                         ) : (
                           <div className="py-1 px-2 rounded-xl bg-slate-100 text-slate-600 text-center text-xs font-semibold">
-                            ครบถ้วน (฿0)
+                            {t('settledEqual')}
                           </div>
                         )}
                       </td>
@@ -290,7 +292,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
             <tfoot>
               <tr className="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300">
                 <td className="sticky-col-first bg-slate-100 py-3 px-3 border-r border-slate-300 z-10">
-                  รวมทั้งหมด ({memberSummaries.length} คน)
+                  {t('grandTotal')} ({memberSummaries.length})
                 </td>
 
                 {/* รวมแต่ละ Session */}

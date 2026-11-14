@@ -13,6 +13,7 @@ import {
   Save
 } from 'lucide-react';
 import { executeAdminAction } from '../services/api';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface MembersViewProps {
   data: AppData;
@@ -33,6 +34,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
   onOpenAdminModal,
   onRefreshData
 }) => {
+  const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
@@ -106,7 +108,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
     }
 
     if (!newMemberName.trim()) {
-      alert('กรุณาระบุชื่อสมาชิก');
+      alert(t('enterExpenseDesc'));
       return;
     }
 
@@ -133,9 +135,9 @@ export const MembersView: React.FC<MembersViewProps> = ({
       <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-slate-900">สมาชิกหะละเกาะฮฺ</h2>
+            <h2 className="text-base font-bold text-slate-900">{t('membersTitle')}</h2>
             <p className="text-xs text-slate-500">
-              แตะชื่อสมาชิกเพื่อดูประวัติการจ่าย ยอดค้าง และเปอร์เซ็นต์เข้าพบ
+              {t('membersSubtitle')}
             </p>
           </div>
           {isAdmin && (
@@ -143,7 +145,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
               onClick={() => setShowAddModal(true)}
               className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-xs"
             >
-              <Plus size={14} /> เพิ่มสมาชิก
+              <Plus size={14} /> {t('btnAddMember')}
             </button>
           )}
         </div>
@@ -154,7 +156,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="ค้นหาชื่อ หรือรหัสสมาชิก..."
+            placeholder={t('searchMemberPlaceholder')}
             className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
           />
         </div>
@@ -191,14 +193,14 @@ export const MembersView: React.FC<MembersViewProps> = ({
                     </span>
                     {m.status === 'inactive' && (
                       <span className="text-[9px] bg-slate-100 text-slate-500 px-1 py-0.2 rounded">
-                        ออกแล้ว
+                        {t('statusInactive')}
                       </span>
                     )}
                   </div>
                   <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
-                    <span>จ่าย ฿{formatCurrency(item.totalPaid)}</span>
+                    <span>{t('colTotalPaid')} ฿{formatCurrency(item.totalPaid)}</span>
                     <span>•</span>
-                    <span>เข้า {item.attendanceStats.attendanceRate}%</span>
+                    <span>{t('attendanceRate')} {item.attendanceStats.attendanceRate}%</span>
                   </div>
                 </div>
               </div>
@@ -208,16 +210,16 @@ export const MembersView: React.FC<MembersViewProps> = ({
                 {item.isOverdue ? (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
                     <AlertCircle size={12} />
-                    ค้าง {item.overdueSessionsCount} ครั้ง
+                    {t('overdueTimes', { count: item.overdueSessionsCount })}
                   </span>
                 ) : item.isAdvance ? (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                     <CheckCircle2 size={12} />
-                    ล่วงหน้า {item.advanceSessionsCount} ครั้ง
+                    {t('advanceTimes', { count: item.advanceSessionsCount })}
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
-                    ครบถ้วน
+                    {t('settledEqual')}
                   </span>
                 )}
                 <div className="text-[10px] text-slate-400 mt-0.5 font-mono">

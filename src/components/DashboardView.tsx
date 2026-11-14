@@ -18,6 +18,7 @@ import {
 import { AppData, GroupFinancialSummary } from '../types';
 import { formatCurrency, formatThaiDate } from '../utils/calculations';
 import { TabType } from './BottomNav';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface DashboardViewProps {
   data: AppData;
@@ -34,6 +35,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigateTab,
   onOpenSessionModal
 }) => {
+  const { t } = useLanguage();
   const [copiedLine, setCopiedLine] = useState(false);
   const latestAmanah = data.amanah && data.amanah.length > 0 ? data.amanah[0] : null;
 
@@ -44,7 +46,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     const thaiYear2Digits = y ? String(parseInt(y, 10) + 543).slice(-2) : '69';
     const shortDateFormatted = `${parseInt(d, 10)}/${parseInt(m, 10)}/${thaiYear2Digits}`;
 
-    let msg = `السلام عليكم ورحمة الله وبركاته\n\n** ฮาลาเกาะฮฺ สัปดาห์นี้\n${shortDateFormatted}\n\n`;
+    let msg = `السلام عليكم ورحمة الله وبركاته\n\n** ฮาลาเกาะฮฺ สัปดาห์ถัดไป\n${shortDateFormatted}\n\n`;
     latestAmanah.assignments.forEach((assign) => {
       const member = data.members.find((m) => m.member_id === assign.member_id);
       const name = member?.name || assign.member_id;
@@ -92,7 +94,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         id: p.payment_id,
         type: 'income' as const,
         date: p.date,
-        title: `รับเงินจาก ${member?.name || p.member_id}`,
+        title: `${t('tabRecordIncome')} - ${member?.name || p.member_id}`,
         subtext: p.note || 'ชำระเงินหะละเกาะฮฺ',
         amount: p.amount,
         createdAt: p.created_at || p.date
@@ -103,7 +105,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       type: 'expense' as const,
       date: e.date,
       title: e.item,
-      subtext: `${e.category} (${e.expense_type === 'communal' ? 'ส่วนกลาง' : 'เฉพาะคน'})`,
+      subtext: `${e.category} (${e.expense_type === 'communal' ? t('communalGroup') : t('individualPerson')})`,
       amount: e.amount,
       createdAt: e.created_at || e.date
     }))
@@ -119,7 +121,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="relative z-10">
           <div className="flex items-center justify-between text-emerald-100 text-xs font-medium mb-1">
             <span className="flex items-center gap-1.5">
-              <Wallet size={16} /> ยอดเงินคงเหลือกองกลาง
+              <Wallet size={16} /> {t('groupBalance')}
             </span>
             <span className="bg-white/15 px-2.5 py-0.5 rounded-full text-[11px] backdrop-blur-xs">
               {data.config.group_name || 'หะละเกาะฮฺ'}
@@ -136,7 +138,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <TrendingUp size={16} />
               </div>
               <div>
-                <p className="text-emerald-200 text-[11px]">รายรับทั้งหมด</p>
+                <p className="text-emerald-200 text-[11px]">{t('totalInflow')}</p>
                 <p className="font-semibold text-white">฿{formatCurrency(summary.totalInflows)}</p>
               </div>
             </div>
@@ -146,7 +148,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <TrendingDown size={16} />
               </div>
               <div>
-                <p className="text-emerald-200 text-[11px]">รายจ่ายกองกลาง</p>
+                <p className="text-emerald-200 text-[11px]">{t('totalOutflow')}</p>
                 <p className="font-semibold text-white">฿{formatCurrency(summary.totalOutflows)}</p>
               </div>
             </div>
@@ -166,7 +168,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-600">ค้างชำระ</span>
+            <span className="text-xs font-semibold text-slate-600">{t('overdue')}</span>
             <div className={`p-1.5 rounded-lg ${summary.overdueMembersCount > 0 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-500'}`}>
               <AlertTriangle size={16} />
             </div>
@@ -178,7 +180,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="text-xs text-slate-500">คน</span>
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
-            รวมค้าง ฿{formatCurrency(summary.totalOverdueAmount)}
+            {t('overdue')}: ฿{formatCurrency(summary.totalOverdueAmount)}
           </p>
         </div>
 
@@ -188,7 +190,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 transition-all cursor-pointer"
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-600">สมาชิกทั้งหมด</span>
+            <span className="text-xs font-semibold text-slate-600">{t('totalMembers')}</span>
             <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
               <Users size={16} />
             </div>
@@ -197,10 +199,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="text-2xl font-bold text-slate-800">
               {summary.activeMembersCount}
             </span>
-            <span className="text-xs text-slate-500">/{summary.totalMembersCount} คน</span>
+            <span className="text-xs text-slate-500">/{summary.totalMembersCount}</span>
           </div>
           <p className="text-[11px] text-emerald-600 mt-1 font-medium">
-            จ่ายล่วงหน้า {summary.advanceMembersCount} คน
+            {t('advanceCount', { count: summary.advanceMembersCount })}
           </p>
         </div>
       </div>
@@ -218,12 +220,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
               <div>
                 <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <span>อามานะฮ์ สัปดาห์ถัดไป</span>
+                  <span>{t('cardAmanahHeader')}</span>
                   <span className="text-[10px] bg-amber-200/60 text-amber-900 font-semibold px-1.5 py-0.2 rounded-full">
                     {formatThaiDate(latestAmanah.session_date)}
                   </span>
                 </h3>
-                <p className="text-[11px] text-slate-500">หน้าที่รับผิดชอบของแต่ละคน</p>
+                <p className="text-[11px] text-slate-500">{t('rolesSectionTitle')}</p>
               </div>
             </div>
 
@@ -236,7 +238,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               }`}
             >
               {copiedLine ? <Check size={12} /> : <Copy size={12} className="text-amber-600" />}
-              <span>{copiedLine ? 'คัดลอกแล้ว!' : 'คัดลอกส่ง LINE'}</span>
+              <span>{copiedLine ? t('copiedDone') : t('btnCopyLine')}</span>
             </button>
           </div>
 
@@ -259,14 +261,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="bg-white rounded-2xl border border-slate-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            เมนูลัด {isAdmin ? '(โหมดเหรัญญิก)' : ''}
+            {t('quickActions')} {isAdmin ? `(${t('roleTreasurer')})` : ''}
           </h3>
           {isAdmin && (
             <button
               onClick={onOpenSessionModal}
               className="inline-flex items-center gap-1 text-xs text-emerald-700 font-semibold hover:underline"
             >
-              <CalendarPlus size={14} /> เพิ่มงวดนัด
+              <CalendarPlus size={14} /> {t('addSession')}
             </button>
           )}
         </div>
@@ -279,7 +281,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center mb-1.5 shadow-xs">
               <ArrowDownLeft size={18} />
             </div>
-            <span className="text-[11px] font-semibold">รับเงิน</span>
+            <span className="text-[11px] font-semibold">{t('btnIncome')}</span>
           </button>
 
           <button
@@ -289,7 +291,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-9 h-9 rounded-full bg-rose-600 text-white flex items-center justify-center mb-1.5 shadow-xs">
               <ArrowUpRight size={18} />
             </div>
-            <span className="text-[11px] font-semibold">จ่ายเงิน</span>
+            <span className="text-[11px] font-semibold">{t('btnExpense')}</span>
           </button>
 
           <button
@@ -299,7 +301,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center mb-1.5 shadow-xs">
               <CheckCircle size={18} />
             </div>
-            <span className="text-[11px] font-semibold">เช็คชื่อ</span>
+            <span className="text-[11px] font-semibold">{t('btnAttendance')}</span>
           </button>
 
           <button
@@ -309,7 +311,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-9 h-9 rounded-full bg-purple-600 text-white flex items-center justify-center mb-1.5 shadow-xs">
               <Receipt size={18} />
             </div>
-            <span className="text-[11px] font-semibold">ตารางค้าง</span>
+            <span className="text-[11px] font-semibold">{t('btnMatrix')}</span>
           </button>
         </div>
       </div>
@@ -324,10 +326,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-900">
-                  งวดล่าสุด: {formatThaiDate(latestSession.session_date)}
+                  {t('latestSession')}: {formatThaiDate(latestSession.session_date)}
                 </span>
                 <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">
-                  ฿{latestSession.amount_per_session}/คน
+                  {t('perPerson', { amount: latestSession.amount_per_session })}
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[200px]">
@@ -339,7 +341,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             onClick={() => onNavigateTab('attendance')}
             className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 px-3 py-1.5 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors"
           >
-            เช็คชื่อ
+            {t('btnAttendance')}
           </button>
         </div>
       )}
@@ -348,18 +350,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="bg-white rounded-2xl border border-slate-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            รายการเคลื่อนไหวล่าสุด
+            {t('recentActivities')}
           </h3>
           <button
             onClick={() => onNavigateTab('transactions')}
             className="text-xs text-emerald-700 font-medium hover:underline"
           >
-            ดูทั้งหมด
+            {t('viewAll')}
           </button>
         </div>
 
         {combinedActivities.length === 0 ? (
-          <p className="text-center py-6 text-xs text-slate-400">ยังไม่มีรายการบันทึก</p>
+          <p className="text-center py-6 text-xs text-slate-400">{t('noTransactionsYet')}</p>
         ) : (
           <div className="divide-y divide-slate-100">
             {combinedActivities.map((item) => (

@@ -13,6 +13,7 @@ import {
 import { AppData, ExpenseType, DeductFrom } from '../types';
 import { formatCurrency, formatThaiDate } from '../utils/calculations';
 import { executeAdminAction } from '../services/api';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface TransactionsViewProps {
   data: AppData;
@@ -29,6 +30,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   onOpenAdminModal,
   onRefreshData
 }) => {
+  const { t } = useLanguage();
   const [activeSubTab, setActiveSubTab] = useState<'income' | 'expense' | 'history'>('income');
 
   // Form State: รายรับ
@@ -64,12 +66,12 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
     }
 
     if (!paymentMemberId) {
-      setStatusMessage({ text: 'กรุณาเลือกสมาชิก', type: 'error' });
+      setStatusMessage({ text: t('selectMemberRequired'), type: 'error' });
       return;
     }
     const amt = parseFloat(paymentAmount);
     if (isNaN(amt) || amt <= 0) {
-      setStatusMessage({ text: 'กรุณาระบุจำนวนเงินที่ถูกต้อง', type: 'error' });
+      setStatusMessage({ text: t('enterValidAmount'), type: 'error' });
       return;
     }
 
@@ -85,11 +87,11 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
 
     setSubmitting(false);
     if (result.success) {
-      setStatusMessage({ text: 'บันทึกรายรับสำเร็จเรียบร้อย', type: 'success' });
+      setStatusMessage({ text: t('incomeSuccess'), type: 'success' });
       setPaymentNote('');
       onRefreshData();
     } else {
-      setStatusMessage({ text: result.error || 'บันทึกไม่สำเร็จ', type: 'error' });
+      setStatusMessage({ text: result.error || t('saveFailed'), type: 'error' });
     }
   };
 
@@ -101,12 +103,12 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
     }
 
     if (!expenseItem.trim()) {
-      setStatusMessage({ text: 'กรุณาระบุรายการค่าใช้จ่าย', type: 'error' });
+      setStatusMessage({ text: t('enterExpenseDesc'), type: 'error' });
       return;
     }
     const amt = parseFloat(expenseAmount);
     if (isNaN(amt) || amt <= 0) {
-      setStatusMessage({ text: 'กรุณาระบุจำนวนเงินที่ถูกต้อง', type: 'error' });
+      setStatusMessage({ text: t('enterValidAmount'), type: 'error' });
       return;
     }
 
@@ -126,13 +128,13 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
 
     setSubmitting(false);
     if (result.success) {
-      setStatusMessage({ text: 'บันทึกรายจ่ายสำเร็จเรียบร้อย', type: 'success' });
+      setStatusMessage({ text: t('expenseSuccess'), type: 'success' });
       setExpenseItem('');
       setExpenseAmount('');
       setExpenseReceiptUrl('');
       onRefreshData();
     } else {
-      setStatusMessage({ text: result.error || 'บันทึกไม่สำเร็จ', type: 'error' });
+      setStatusMessage({ text: result.error || t('saveFailed'), type: 'error' });
     }
   };
 
@@ -141,7 +143,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       onOpenAdminModal();
       return;
     }
-    if (!confirm('ยืนยันการลบรายการรับเงินนี้?')) return;
+    if (!confirm(t('deleteConfirm'))) return;
 
     const res = await executeAdminAction('delete_payment', adminPin, { payment_id: paymentId });
     if (res.success) {
@@ -156,7 +158,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       onOpenAdminModal();
       return;
     }
-    if (!confirm('ยืนยันการลบรายการจ่ายเงินนี้?')) return;
+    if (!confirm(t('deleteConfirm'))) return;
 
     const res = await executeAdminAction('delete_expense', adminPin, { expense_id: expenseId });
     if (res.success) {
@@ -182,7 +184,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           }`}
         >
           <ArrowDownLeft size={15} className="text-emerald-600" />
-          <span>บันทึกรายรับ</span>
+          <span>{t('tabRecordIncome')}</span>
         </button>
 
         <button
@@ -197,7 +199,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           }`}
         >
           <ArrowUpRight size={15} className="text-rose-600" />
-          <span>บันทึกรายจ่าย</span>
+          <span>{t('tabRecordExpense')}</span>
         </button>
 
         <button
@@ -212,7 +214,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           }`}
         >
           <FileText size={15} />
-          <span>ประวัติทั้งหมด</span>
+          <span>{t('tabHistory')}</span>
         </button>
       </div>
 
@@ -238,16 +240,16 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       {!isAdmin && activeSubTab !== 'history' && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-800 flex items-start justify-between gap-3">
           <div>
-            <p className="font-bold">ขณะนี้ท่านอยู่ในโหมดสมาชิก (ดูอย่างเดียว)</p>
+            <p className="font-bold">{t('memberOnlyWarning')}</p>
             <p className="text-[11px] text-amber-700 mt-0.5">
-              ต้องเข้าสู่โหมดผู้ดูแล/เหรัญญิกเพื่อบันทึกรายการ
+              {t('enterPinAdminPrompt')}
             </p>
           </div>
           <button
             onClick={onOpenAdminModal}
             className="px-3 py-1.5 bg-amber-600 text-white font-semibold rounded-lg shrink-0 shadow-xs"
           >
-            ใส่ PIN เหรัญญิก
+            {t('enterPinBtn')}
           </button>
         </div>
       )}
@@ -260,17 +262,17 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           <div className="border-b border-slate-100 pb-2">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              บันทึกการชำระเงินของสมาชิก
+              {t('tabRecordIncome')}
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              จ่ายก้อนเดียวหลายครั้งหรือจ่ายค้างได้ ระบบจะตัดงวดเก่าสุดให้อัตโนมัติ
+              จ่ายก้อนเดียวหลายครั้งหรือจ่ายค้างได้ ระบบจะตัดงวดเก่าสุดให้อัตโนมัติ (FIFO)
             </p>
           </div>
 
           {/* เลือกสมาชิก */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              สมาชิกผู้จ่าย <span className="text-rose-500">*</span>
+              {t('payerMember')} <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <select
@@ -280,7 +282,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               >
                 {data.members.map((m) => (
                   <option key={m.member_id} value={m.member_id}>
-                    {m.name} ({m.member_id}) {m.status === 'inactive' ? '(ออกแล้ว)' : ''}
+                    {m.name} ({m.member_id}) {m.status === 'inactive' ? `(${t('statusInactive')})` : ''}
                   </option>
                 ))}
               </select>
@@ -291,7 +293,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           {/* จำนวนเงิน */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              จำนวนเงิน (บาท) <span className="text-rose-500">*</span>
+              {t('amountBaht')} <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <input
@@ -300,10 +302,10 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                 step="any"
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
-                placeholder="ระบุจำนวนเงิน เช่น 20, 60"
+                placeholder="20, 60..."
                 className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
               />
-              <span className="absolute right-3 top-3 text-xs text-slate-400 font-medium">บาท</span>
+              <span className="absolute right-3 top-3 text-xs text-slate-400 font-medium">฿</span>
             </div>
 
             {/* ปุ่มลัดจำนวนเงิน */}
@@ -328,7 +330,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           {/* วันที่รับเงิน */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              วันที่รับเงิน
+              {t('paymentDate')}
             </label>
             <div className="relative">
               <input
@@ -344,7 +346,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           {/* หมายเหตุ */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              หมายเหตุ (ถ้ามี)
+              {t('noteOptional')}
             </label>
             <input
               type="text"
@@ -360,7 +362,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             disabled={submitting}
             className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-sm transition-all active:scale-98 disabled:opacity-50"
           >
-            {submitting ? 'กำลังบันทึก...' : 'บันทึกการรับเงิน'}
+            {submitting ? t('savingText') : t('btnSavePayment')}
           </button>
         </form>
       )}
@@ -373,17 +375,17 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           <div className="border-b border-slate-100 pb-2">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-rose-500" />
-              บันทึกรายการรายจ่าย
+              {t('tabRecordExpense')}
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              รองรับทั้งรายจ่ายส่วนกลาง และรายจ่ายเฉพาะคน (เลือกแหล่งหักเงินได้)
+              รองรับทั้งรายจ่ายส่วนกลาง และรายจ่ายเฉพาะคน
             </p>
           </div>
 
           {/* รายการ */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              รายการค่าใช้จ่าย <span className="text-rose-500">*</span>
+              {t('expenseItem')} <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -397,7 +399,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           {/* จำนวนเงิน */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              จำนวนเงิน (บาท) <span className="text-rose-500">*</span>
+              {t('amountBaht')} <span className="text-rose-500">*</span>
             </label>
             <input
               type="number"
@@ -413,7 +415,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           {/* หมวดหมู่ */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              หมวดหมู่
+              {t('category')}
             </label>
             <div className="flex flex-wrap gap-1.5">
               {categories.map((cat) => (
@@ -436,7 +438,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           {/* ประเภทรายจ่าย: ส่วนกลาง vs เฉพาะคน */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              ประเภทรายจ่าย
+              {t('expenseType')}
             </label>
             <div className="grid grid-cols-2 gap-2">
               <label
@@ -454,7 +456,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                   onChange={() => setExpenseType('communal')}
                   className="sr-only"
                 />
-                <span>ส่วนกลาง (ทั้งกลุ่ม)</span>
+                <span>{t('communalGroup')}</span>
               </label>
 
               <label
@@ -472,7 +474,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                   onChange={() => setExpenseType('individual')}
                   className="sr-only"
                 />
-                <span>เฉพาะคน (รายบุคคล)</span>
+                <span>{t('individualPerson')}</span>
               </label>
             </div>
           </div>
@@ -499,7 +501,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-amber-900 mb-1">
-                  แหล่งหักเงิน
+                  {t('deductFrom')}
                 </label>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <label
@@ -517,7 +519,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                       onChange={() => setExpenseDeductFrom('group_fund')}
                       className="sr-only"
                     />
-                    <span>หักจากกองกลาง</span>
+                    <span>{t('deductGroupFund')}</span>
                   </label>
 
                   <label
@@ -535,12 +537,9 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                       onChange={() => setExpenseDeductFrom('member_balance')}
                       className="sr-only"
                     />
-                    <span>หักจากยอดสะสมคนนั้น</span>
+                    <span>{t('deductMemberBalance')}</span>
                   </label>
                 </div>
-                <p className="text-[10px] text-amber-800 mt-1">
-                  *หักจากยอดสะสมคนนั้น จะปรับลดยอดคงเหลือ/เพิ่มยอดค้างของคนนั้นโดยไม่กระทบกองกลาง
-                </p>
               </div>
             </div>
           )}
@@ -548,7 +547,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           {/* ลิงก์รูปใบเสร็จ */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              ลิงก์รูปใบเสร็จ / สลิป (ถ้ามี)
+              {t('receiptUrl')}
             </label>
             <input
               type="url"
@@ -577,7 +576,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             disabled={submitting}
             className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl shadow-sm transition-all active:scale-98 disabled:opacity-50"
           >
-            {submitting ? 'กำลังบันทึก...' : 'บันทึกรายจ่าย'}
+            {submitting ? t('savingText') : t('btnSaveExpense')}
           </button>
         </form>
       )}

@@ -3,6 +3,7 @@ import { AppData, AttendanceStatus } from '../types';
 import { formatThaiDate } from '../utils/calculations';
 import { CheckCircle2, XCircle, Clock, Save, Calendar, Plus, AlertCircle } from 'lucide-react';
 import { executeAdminAction } from '../services/api';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface AttendanceViewProps {
   data: AppData;
@@ -21,6 +22,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   onOpenSessionModal,
   onRefreshData
 }) => {
+  const { t } = useLanguage();
   // วันที่นัดล่าสุดเป็นค่าเริ่มต้น
   const sortedSessions = [...data.sessions].sort((a, b) => 
     b.session_date.localeCompare(a.session_date)
@@ -110,10 +112,10 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 
     setSaving(false);
     if (result.success) {
-      setMessage({ text: 'บันทึกการเช็คชื่อเข้าพบเรียบร้อยแล้ว', type: 'success' });
+      setMessage({ text: t('saveAttendanceSuccess'), type: 'success' });
       onRefreshData();
     } else {
-      setMessage({ text: result.error || 'บันทึกไม่สำเร็จ', type: 'error' });
+      setMessage({ text: result.error || t('saveAttendanceFail'), type: 'error' });
     }
   };
 
@@ -131,9 +133,9 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-slate-900">เช็คชื่อการเข้าพบ (Attendance)</h2>
+            <h2 className="text-base font-bold text-slate-900">{t('attendanceTitle')}</h2>
             <p className="text-xs text-slate-500">
-              แตะเปลี่ยนสถานะต่อคน (ค่าเริ่มต้นคือ "มา" ทุกคน)
+              {t('attendanceSubtitle')}
             </p>
           </div>
           {isAdmin && (
@@ -141,7 +143,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
               onClick={onOpenSessionModal}
               className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition-colors"
             >
-              <Plus size={14} /> นัดวันใหม่
+              <Plus size={14} /> {t('newSession')}
             </button>
           )}
         </div>
@@ -166,9 +168,9 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
             onClick={handleSetAllPresent}
             type="button"
             className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-xl whitespace-nowrap transition-colors"
-            title="ตั้งทุกคนเป็นสถานะ 'มา'"
+            title={t('setAllPresent')}
           >
-            ตั้งทุกคน 'มา'
+            {t('setAllPresent')}
           </button>
         </div>
 
@@ -184,15 +186,15 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       <div className="grid grid-cols-3 gap-2 text-center text-xs">
         <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl">
           <span className="block font-bold text-emerald-700 text-base">{presentCount}</span>
-          <span className="text-[11px] text-emerald-800 font-medium">มา</span>
+          <span className="text-[11px] text-emerald-800 font-medium">{t('statusPresent')}</span>
         </div>
         <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl">
           <span className="block font-bold text-amber-700 text-base">{leaveCount}</span>
-          <span className="text-[11px] text-amber-800 font-medium">ลา</span>
+          <span className="text-[11px] text-amber-800 font-medium">{t('statusLeave')}</span>
         </div>
         <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl">
           <span className="block font-bold text-rose-700 text-base">{absentCount}</span>
-          <span className="text-[11px] text-rose-800 font-medium">ไม่มา</span>
+          <span className="text-[11px] text-rose-800 font-medium">{t('statusAbsent')}</span>
         </div>
       </div>
 
@@ -239,7 +241,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     }`}
                   >
                     <CheckCircle2 size={13} />
-                    <span>มา</span>
+                    <span>{t('statusPresent')}</span>
                   </button>
 
                   <button
@@ -252,7 +254,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     }`}
                   >
                     <Clock size={13} />
-                    <span>ลา</span>
+                    <span>{t('statusLeave')}</span>
                   </button>
 
                   <button
@@ -265,7 +267,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     }`}
                   >
                     <XCircle size={13} />
-                    <span>ไม่มา</span>
+                    <span>{t('statusAbsent')}</span>
                   </button>
                 </div>
               </div>
@@ -277,7 +279,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     type="text"
                     value={current.note}
                     onChange={(e) => handleNoteChange(member.member_id, e.target.value)}
-                    placeholder="ระบุเหตุผล (เช่น ลาป่วย, ติดงาน)"
+                    placeholder={t('reasonOptional')}
                     className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
@@ -295,7 +297,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-50"
         >
           <Save size={16} />
-          <span>{saving ? 'กำลังบันทึกข้อมูล...' : `บันทึกการเช็คชื่อทั้งหมด (${formatThaiDate(selectedDate)})`}</span>
+          <span>{saving ? t('savingText') : `${t('saveAttendanceBatch')} (${formatThaiDate(selectedDate)})`}</span>
         </button>
       </div>
     </div>
