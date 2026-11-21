@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Calendar, X } from 'lucide-react';
+import { Calendar, X, Wallet, Users } from 'lucide-react';
 import { executeAdminAction } from '../services/api';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface SessionModalProps {
   isOpen: boolean;
@@ -21,7 +22,9 @@ export const SessionModal: React.FC<SessionModalProps> = ({
   onOpenAdminModal,
   onRefreshData,
 }) => {
+  const { t } = useLanguage();
   const [sessionDate, setSessionDate] = useState(new Date().toISOString().split('T')[0]);
+  const [hasFee, setHasFee] = useState(true);
   const [amount, setAmount] = useState(String(defaultAmount || 20));
   const [topic, setTopic] = useState('');
   const [saving, setSaving] = useState(false);
@@ -41,8 +44,8 @@ export const SessionModal: React.FC<SessionModalProps> = ({
       return;
     }
 
-    const amt = parseFloat(amount);
-    if (isNaN(amt) || amt < 0) {
+    const amt = hasFee ? parseFloat(amount) : 0;
+    if (hasFee && (isNaN(amt) || amt < 0)) {
       setError('ยอดเก็บเงินต่อครั้งไม่ถูกต้อง');
       return;
     }
@@ -82,7 +85,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-900">เพิ่มงวดนัดพบหะละเกาะฮฺ</h3>
-            <p className="text-xs text-slate-500">กำหนดวันที่และยอดเรียกเก็บต่องวด</p>
+            <p className="text-xs text-slate-500">กำหนดวันที่ และเลือกเก็บเงินหรือพบปะอย่างเดียว</p>
           </div>
         </div>
 
@@ -106,24 +109,68 @@ export const SessionModal: React.FC<SessionModalProps> = ({
             />
           </div>
 
+          {/* ตัวเลือกประเภทงวด: เก็บเงิน vs พบปะอย่างเดียว */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              ยอดเรียกเก็บต่องวด (บาท) <span className="text-rose-500">*</span>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              {t('sessionFeeLabel')}
             </label>
-            <div className="relative">
-              <input
-                type="number"
-                min="0"
-                step="any"
-                required
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="20"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
-              />
-              <span className="absolute right-3 top-2 text-xs text-slate-400">บาท</span>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setHasFee(true);
+                  if (amount === '0') setAmount(String(defaultAmount || 20));
+                }}
+                className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 transition-all ${
+                  hasFee
+                    ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold shadow-2xs'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Wallet size={16} className={hasFee ? 'text-emerald-600' : 'text-slate-400'} />
+                <span className="text-[11px] text-center">{t('sessionWithFee')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setHasFee(false)}
+                className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 transition-all ${
+                  !hasFee
+                    ? 'bg-amber-50 border-amber-500 text-amber-900 font-bold shadow-2xs'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Users size={16} className={!hasFee ? 'text-amber-600' : 'text-slate-400'} />
+                <span className="text-[11px] text-center">{t('sessionNoFee')}</span>
+              </button>
             </div>
+            {!hasFee && (
+              <p className="text-[10px] text-amber-700 mt-1">
+                *งวดนี้จะไปปรากฏเฉพาะในหน้าเช็คชื่อเท่านั้น โดยไม่สร้างหนี้ค้างในตารางเงิน
+              </p>
+            )}
           </div>
+
+          {hasFee && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                ยอดเรียกเก็บต่องวด (บาท) <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  step="any"
+                  required={hasFee}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="20"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
+                />
+                <span className="absolute right-3 top-2 text-xs text-slate-400">฿</span>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">

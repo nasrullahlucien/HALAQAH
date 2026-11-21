@@ -21,14 +21,14 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
   const [search, setSearch] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'advance'>('all');
 
-  // เรียงลำดับ Sessions จากเก่าไปใหม่
-  const sortedSessions = [...data.sessions].sort((a, b) => 
-    a.session_date.localeCompare(b.session_date)
-  );
+  // เรียงลำดับ Sessions จากเก่าไปใหม่ และกรองเฉพาะงวดที่มีการเก็บเงินจริงเท่านั้น (amount_per_session > 0)
+  const feeSessions = [...data.sessions]
+    .filter(s => (Number(s.amount_per_session) || 0) > 0)
+    .sort((a, b) => a.session_date.localeCompare(b.session_date));
 
-  // คำนวณสรุปของสมาชิกทุกคน
+  // คำนวณสรุปของสมาชิกทุกคน (เฉพาะงวดที่มีการเก็บเงิน)
   const memberSummaries = data.members.map(member => 
-    calculateMemberSummary(member, sortedSessions, data)
+    calculateMemberSummary(member, feeSessions, data)
   );
 
   // กรองตามการค้นหาและ Filter mode
@@ -48,7 +48,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
   const totalNetBalanceAll = memberSummaries.reduce((sum, s) => sum + s.netBalance, 0);
 
   // คำนวณยอดเงินที่เก็บได้ในแต่ละงวด (จาก FIFO allocation)
-  const sessionTotalCollected = sortedSessions.map(session => {
+  const sessionTotalCollected = feeSessions.map(session => {
     return memberSummaries.reduce((sum, s) => {
       const status = s.sessionPaymentStatus[session.session_date];
       return sum + (status ? status.allocatedAmount : 0);
@@ -155,8 +155,8 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
                   {t('colMemberName')}
                 </th>
 
-                {/* คอลัมน์ Sessions แต่ละงวด */}
-                {sortedSessions.map((session, idx) => (
+                {/* คอลัมน์ Sessions แต่ละงวดที่มีการเก็บเงิน */}
+                {feeSessions.map((session, idx) => (
                   <th
                     key={session.session_id}
                     className="py-3 px-2 text-center min-w-[85px] border-r border-slate-200"
@@ -189,7 +189,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
               {filteredSummaries.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={sortedSessions.length + 4}
+                    colSpan={feeSessions.length + 4}
                     className="py-8 text-center text-slate-400 text-xs"
                   >
                     ไม่พบข้อมูลสมาชิกตามเงื่อนไขที่เลือก
@@ -217,8 +217,8 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
                         )}
                       </td>
 
-                      {/* แต่ละ Session */}
-                      {sortedSessions.map((session) => {
+                      {/* แต่ละ Session ที่มีการเก็บเงิน */}
+                      {feeSessions.map((session) => {
                         const sStatus = item.sessionPaymentStatus[session.session_date];
                         const statusType = sStatus?.status || 'unpaid';
 

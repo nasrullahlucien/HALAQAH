@@ -376,9 +376,64 @@ export const translations: Translations = {
     ar: 'تسجيل الحضور'
   },
   attendanceSubtitle: {
-    th: 'แตะเปลี่ยนสถานะต่อคน (ค่าเริ่มต้นคือ "มา" ทุกคน)',
-    en: 'Tap to change status (Default is all present)',
-    ar: 'اضغط لتغيير الحالة (الافتراضي هو حضور الجميع)'
+    th: 'บันทึกเวลาพบปะ แยกจากตารางเงิน (บางสัปดาห์พบปะโดยไม่เก็บเงิน)',
+    en: 'Track attendance separately from finance (some weeks have no fees)',
+    ar: 'سجل الحضور منفصل عن المالية (بعض اللقاءات بدون اشتراك)'
+  },
+  viewAttendanceMatrix: {
+    th: 'ตารางรวม (ปพ.5)',
+    en: 'Matrix Register',
+    ar: 'جدول الحضور العام'
+  },
+  viewAttendanceDaily: {
+    th: 'เช็คชื่อด่วน (รายวัน)',
+    en: 'Daily Check-in',
+    ar: 'تسجيل الحضور اليومي'
+  },
+  colPresentCount: {
+    th: 'มา',
+    en: 'Pres.',
+    ar: 'ح'
+  },
+  colLeaveCount: {
+    th: 'ลา',
+    en: 'Leave',
+    ar: 'ل'
+  },
+  colAbsentCount: {
+    th: 'ขาด',
+    en: 'Abs.',
+    ar: 'غ'
+  },
+  colTotalAttended: {
+    th: 'เข้าพบ',
+    en: 'Total',
+    ar: 'المجموع'
+  },
+  colSummaryRate: {
+    th: 'สรุปผล',
+    en: 'Rate',
+    ar: 'النسبة'
+  },
+  sessionWithFee: {
+    th: 'ปกติ (พบปะ + เก็บเงิน)',
+    en: 'Regular (With Fee)',
+    ar: 'لقاء عادي (مع اشتراك)'
+  },
+  sessionNoFee: {
+    th: 'งดเก็บเงิน (พบปะอย่างเดียว ฿0)',
+    en: 'Meet-up Only (No Fee ฿0)',
+    ar: 'لقاء فقط (بدون اشتراك)'
+  },
+  sessionFeeLabel: {
+    th: 'ประเภทงวดนัดพบ',
+    en: 'Session Type',
+    ar: 'نوع اللقاء'
+  },
+  tapToChangeAttendance: {
+    th: 'แตะที่ช่องในตารางเพื่อสลับสถานะ (มา ➔ ลา ➔ ขาด)',
+    en: 'Tap table cell to toggle status (Present ➔ Leave ➔ Absent)',
+    ar: 'اضغط على الخلية لتغيير الحالة (حاضر ➔ مستأذن ➔ غائب)'
   },
   setAllPresent: {
     th: 'ตั้งทุกคน "มา"',
