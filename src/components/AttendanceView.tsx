@@ -37,12 +37,12 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  // โหมดการแสดงผล: 'matrix' (ตารางรวมแบบ ปพ.5) vs 'daily' (เช็คชื่อด่วนรายวัน)
+  // โหมดการแสดงผล: 'matrix' (ตารางรวม) vs 'daily' (เช็คชื่อด่วนรายวัน)
   const [viewMode, setViewMode] = useState<'matrix' | 'daily'>('matrix');
   const [search, setSearch] = useState('');
 
   // เรียงลำดับ Sessions ทั้งหมด (รวมทั้งงวดที่มีและไม่มีเก็บเงิน)
-  // ในตารางแบบ ปพ.5 นิยมเรียงจากซ้ายไปขวา (เก่าสุด -> ใหม่สุด)
+  // เรียงจากซ้ายไปขวา (เก่าสุด -> ใหม่สุด)
   const sortedSessionsChronological = [...data.sessions].sort((a, b) => 
     a.session_date.localeCompare(b.session_date)
   );
@@ -215,7 +215,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* ปุ่มสลับโหมด: ตารางรวม (ปพ.5) vs เช็คชื่อด่วน (รายวัน) */}
+            {/* ปุ่มสลับโหมด: ตารางรวม vs เช็คชื่อด่วน (รายวัน) */}
             <div className="bg-slate-100 p-1 rounded-xl flex items-center text-xs font-semibold">
               <button
                 onClick={() => setViewMode('matrix')}
@@ -267,7 +267,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       </div>
 
       {/* ========================================================= */}
-      {/* 2. มุมมองที่ 1: ตารางเช็คชื่อรวมสไตล์ ปพ.5 (Attendance Matrix) */}
+      {/* 2. มุมมองที่ 1: ตารางเช็คชื่อรวม (Attendance Matrix) */}
       {/* ========================================================= */}
       {viewMode === 'matrix' && (
         <div className="space-y-3">
@@ -300,7 +300,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
             </div>
           </div>
 
-          {/* ตารางหลักสไตล์ ปพ.5 */}
+          {/* ตารางหลักเช็คชื่อรวม */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left text-xs border-collapse min-w-[760px]">

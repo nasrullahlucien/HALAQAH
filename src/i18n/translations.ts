@@ -381,7 +381,7 @@ export const translations: Translations = {
     ar: 'سجل الحضور منفصل عن المالية (بعض اللقاءات بدون اشتراك)'
   },
   viewAttendanceMatrix: {
-    th: 'ตารางรวม (ปพ.5)',
+    th: 'ตารางรวม',
     en: 'Matrix Register',
     ar: 'جدول الحضور العام'
   },
