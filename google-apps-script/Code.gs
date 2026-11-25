@@ -236,6 +236,8 @@ function doPost(e) {
       'delete_expense',
       'record_attendance',
       'add_session',
+      'update_session',
+      'delete_session',
       'add_member',
       'update_member'
     ];
@@ -274,6 +276,14 @@ function doPost(e) {
 
       case 'add_session':
         result = handleAddSession(payload);
+        break;
+
+      case 'update_session':
+        result = handleUpdateSession(payload);
+        break;
+
+      case 'delete_session':
+        result = handleDeleteSession(payload);
         break;
 
       case 'add_member':
@@ -582,6 +592,111 @@ function handleAddSession(payload) {
   sheet.appendRow([sessionId, sessionDate, amount, topicOrNote, new Date().toISOString()]);
 
   return { session_id: sessionId, message: 'เพิ่มงวดนัดพบเรียบร้อยแล้ว' };
+}
+
+function handleUpdateSession(payload) {
+  const sessionId = String(payload.session_id || '').trim();
+  const newDate = formatDateOnly(payload.session_date);
+  const amount = Number(payload.amount_per_session !== undefined ? payload.amount_per_session : 20);
+  const topicOrNote = String(payload.topic_or_note || '').trim();
+
+  if (!sessionId) throw new Error('กรุณาระบุ session_id');
+  if (!newDate) throw new Error('กรุณาระบุวันที่นัดพบ');
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sessionSheet = ss.getSheetByName(SHEETS.SESSIONS);
+  if (!sessionSheet) throw new Error('ไม่พบชีต Sessions');
+
+  const data = sessionSheet.getDataRange().getValues();
+  let oldDate = null;
+  let targetRow = -1;
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === sessionId) {
+      oldDate = formatDateOnly(data[i][1]);
+      targetRow = i + 1;
+      break;
+    }
+  }
+
+  if (targetRow === -1) {
+    throw new Error(`ไม่พบงวดนัดรหัส ${sessionId}`);
+  }
+
+  // อัปเดตใน Sessions Sheet
+  sessionSheet.getRange(targetRow, 2).setValue(newDate);
+  sessionSheet.getRange(targetRow, 3).setValue(amount);
+  sessionSheet.getRange(targetRow, 4).setValue(topicOrNote);
+
+  // ถ้ามีการเปลี่ยนวันที่ ให้เปลี่ยน session_date ใน Attendance ด้วย
+  if (oldDate && oldDate !== newDate) {
+    const attSheet = ss.getSheetByName(SHEETS.ATTENDANCE);
+    if (attSheet) {
+      const attData = attSheet.getDataRange().getValues();
+      for (let j = 1; j < attData.length; j++) {
+        if (formatDateOnly(attData[j][1]) === oldDate) {
+          attSheet.getRange(j + 1, 2).setValue(newDate);
+          // อัปเดต key คอลัมน์ที่ 1 (key = date_memberId)
+          const mId = String(attData[j][2]);
+          attSheet.getRange(j + 1, 1).setValue(`${newDate}_${mId}`);
+        }
+      }
+    }
+
+    // อัปเดต session_date ใน Amanah ถ้ามี
+    const amSheet = ss.getSheetByName(SHEETS.AMANAH);
+    if (amSheet) {
+      const amData = amSheet.getDataRange().getValues();
+      for (let k = 1; k < amData.length; k++) {
+        if (formatDateOnly(amData[k][1]) === oldDate) {
+          amSheet.getRange(k + 1, 2).setValue(newDate);
+        }
+      }
+    }
+  }
+
+  return { message: 'อัปเดตข้อมูลและวันที่งวดนัดเรียบร้อยแล้ว' };
+}
+
+function handleDeleteSession(payload) {
+  const sessionId = String(payload.session_id || '').trim();
+  const sessionDate = payload.session_date ? formatDateOnly(payload.session_date) : '';
+
+  if (!sessionId && !sessionDate) throw new Error('กรุณาระบุ session_id หรือ session_date');
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sessionSheet = ss.getSheetByName(SHEETS.SESSIONS);
+  if (!sessionSheet) throw new Error('ไม่พบชีต Sessions');
+
+  const data = sessionSheet.getDataRange().getValues();
+  let dateToDelete = sessionDate;
+
+  for (let i = 1; i < data.length; i++) {
+    const rowId = String(data[i][0]);
+    const rowDate = formatDateOnly(data[i][1]);
+
+    if ((sessionId && rowId === sessionId) || (sessionDate && rowDate === sessionDate)) {
+      dateToDelete = rowDate;
+      sessionSheet.deleteRow(i + 1);
+      break;
+    }
+  }
+
+  // ลบประวัติการเช็คชื่อของวันที่ถูกลบออกจากชีต Attendance
+  if (dateToDelete) {
+    const attSheet = ss.getSheetByName(SHEETS.ATTENDANCE);
+    if (attSheet) {
+      const attData = attSheet.getDataRange().getValues();
+      // ลบจากล่างขึ้นบนเพื่อไม่ให้ดัชนีเลื่อน
+      for (let j = attData.length - 1; j >= 1; j--) {
+        if (formatDateOnly(attData[j][1]) === dateToDelete) {
+          attSheet.deleteRow(j + 1);
+        }
+      }
+    }
+  }
+
+  return { message: 'ลบงวดนัดและข้อมูลเช็คชื่อเรียบร้อยแล้ว' };
 }
 
 function handleAddMember(payload) {

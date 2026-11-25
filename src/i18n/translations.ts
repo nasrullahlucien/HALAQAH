@@ -701,6 +701,31 @@ export const translations: Translations = {
     en: 'Item deleted successfully',
     ar: 'تم الحذف بنجاح'
   },
+  editSessionTitle: {
+    th: 'จัดการงวดนัดพบ',
+    en: 'Manage Session',
+    ar: 'إدارة اللقاء'
+  },
+  deleteSession: {
+    th: 'ลบงวดนัดนี้',
+    en: 'Delete Session',
+    ar: 'حذف هذا اللقاء'
+  },
+  confirmDeleteSession: {
+    th: 'ต้องการลบงวดนัดนี้ใช่หรือไม่? (ข้อมูลการเช็คชื่อในงวดนี้จะถูกลบออกด้วย)',
+    en: 'Are you sure you want to delete this session? (Attendance records will be deleted)',
+    ar: 'هل أنت متأكد من حذف هذا اللقاء؟ (سيتم حذف سجل الحضور المرتبط به)'
+  },
+  updateSessionSuccess: {
+    th: 'อัปเดตข้อมูลงวดนัดเรียบร้อยแล้ว',
+    en: 'Session updated successfully',
+    ar: 'تم تحديث اللقاء بنجاح'
+  },
+  deleteSessionSuccess: {
+    th: 'ลบงวดนัดเรียบร้อยแล้ว',
+    en: 'Session deleted successfully',
+    ar: 'تم حذف اللقاء بنجاح'
+  },
 
   // Language names
   langThai: {

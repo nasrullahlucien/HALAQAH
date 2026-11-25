@@ -255,7 +255,7 @@ function handleLocalAction(
       const newSession: Session = {
         session_id: 'S' + Date.now(),
         session_date: payload.session_date,
-        amount_per_session: Number(payload.amount_per_session || 20),
+        amount_per_session: Number(payload.amount_per_session || 0),
         topic_or_note: payload.topic_or_note || '',
         created_at: new Date().toISOString()
       };
@@ -265,6 +265,65 @@ function handleLocalAction(
       };
       saveCachedData(updated);
       return { success: true, data: updated, message: 'เพิ่มงวดนัดพบเรียบร้อยแล้ว' };
+    }
+
+    case 'update_session': {
+      const sessionId = payload.session_id;
+      const newDate = payload.session_date;
+      const amount = Number(payload.amount_per_session !== undefined ? payload.amount_per_session : 20);
+      const topic = payload.topic_or_note || '';
+
+      const target = current.sessions.find(s => s.session_id === sessionId);
+      const oldDate = target?.session_date;
+
+      const updatedSessions = current.sessions.map(s => {
+        if (s.session_id === sessionId) {
+          return {
+            ...s,
+            session_date: newDate,
+            amount_per_session: amount,
+            topic_or_note: topic
+          };
+        }
+        return s;
+      }).sort((a, b) => a.session_date.localeCompare(b.session_date));
+
+      // เปลี่ยนวันที่ใน Attendance ถ้ามีการเปลี่ยน
+      let updatedAttendance = current.attendance;
+      if (oldDate && oldDate !== newDate) {
+        updatedAttendance = current.attendance.map(a => {
+          if (a.session_date === oldDate) {
+            return { ...a, session_date: newDate };
+          }
+          return a;
+        });
+      }
+
+      const updated = {
+        ...current,
+        sessions: updatedSessions,
+        attendance: updatedAttendance
+      };
+      saveCachedData(updated);
+      return { success: true, data: updated, message: 'อัปเดตงวดนัดเรียบร้อยแล้ว' };
+    }
+
+    case 'delete_session': {
+      const sessionId = payload.session_id;
+      const sessionDate = payload.session_date;
+      const target = current.sessions.find(s => (sessionId && s.session_id === sessionId) || (sessionDate && s.session_date === sessionDate));
+      const targetDate = target?.session_date || sessionDate;
+
+      const updatedSessions = current.sessions.filter(s => s.session_id !== target?.session_id);
+      const updatedAttendance = current.attendance.filter(a => a.session_date !== targetDate);
+
+      const updated = {
+        ...current,
+        sessions: updatedSessions,
+        attendance: updatedAttendance
+      };
+      saveCachedData(updated);
+      return { success: true, data: updated, message: 'ลบงวดนัดเรียบร้อยแล้ว' };
     }
 
     case 'add_member': {

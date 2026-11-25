@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppData, Member } from '../types';
+import { AppData, Member, Session } from '../types';
 import { calculateMemberSummary, formatCurrency, formatThaiDate } from '../utils/calculations';
 import { AlertCircle, CheckCircle2, Search } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -8,6 +8,7 @@ interface MatrixViewProps {
   data: AppData;
   onSelectMember: (member: Member) => void;
   onOpenSessionModal: () => void;
+  onSelectSession?: (session: Session) => void;
   isAdmin: boolean;
 }
 
@@ -15,6 +16,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
   data,
   onSelectMember,
   onOpenSessionModal,
+  onSelectSession,
   isAdmin
 }) => {
   const { t } = useLanguage();
@@ -159,8 +161,9 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
                 {feeSessions.map((session, idx) => (
                   <th
                     key={session.session_id}
-                    className="py-3 px-2 text-center min-w-[85px] border-r border-slate-200"
-                    title={session.topic_or_note || ''}
+                    onClick={() => onSelectSession?.(session)}
+                    className="py-3 px-2 text-center min-w-[85px] border-r border-slate-200 cursor-pointer hover:bg-slate-200/80 transition-colors select-none"
+                    title="แตะเพื่อดูรายละเอียด / แก้ไข / ลบงวดนี้"
                   >
                     <div className="font-bold text-slate-900 leading-tight">
                       {formatThaiDate(session.session_date, { yearOffset: false })}

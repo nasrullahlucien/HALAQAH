@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppData, AttendanceStatus, Member } from '../types';
+import { AppData, AttendanceStatus, Member, Session } from '../types';
 import { formatThaiDate } from '../utils/calculations';
 import {
   CheckCircle2,
@@ -22,6 +22,7 @@ interface AttendanceViewProps {
   adminPin: string;
   onOpenAdminModal: () => void;
   onOpenSessionModal: () => void;
+  onSelectSession?: (session: Session) => void;
   onRefreshData: () => void;
 }
 
@@ -31,6 +32,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   adminPin,
   onOpenAdminModal,
   onOpenSessionModal,
+  onSelectSession,
   onRefreshData
 }) => {
   const { t } = useLanguage();
@@ -321,10 +323,11 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                       return (
                         <th
                           key={session.session_id}
-                          className="py-2 px-1 text-center min-w-[50px] border-r border-slate-200"
-                          title={session.topic_or_note || formatThaiDate(session.session_date)}
+                          onClick={() => onSelectSession?.(session)}
+                          className="py-2 px-1 text-center min-w-[50px] border-r border-slate-200 cursor-pointer hover:bg-slate-200/90 transition-colors group select-none"
+                          title="แตะเพื่อดูรายละเอียด / แก้ไข / ลบงวดนี้"
                         >
-                          <div className="flex flex-col items-center">
+                          <div className="flex flex-col items-center group-hover:scale-105 transition-transform">
                             {/* เดือนด้านบน */}
                             <span className="text-[10px] font-bold text-slate-600 leading-tight">
                               {m}
@@ -337,8 +340,8 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                             <span
                               className={`text-[9px] mt-0.5 px-1 py-0.2 rounded font-mono ${
                                 isFeeSession
-                                  ? 'bg-emerald-50 text-emerald-700 font-semibold'
-                                  : 'bg-amber-50 text-amber-800'
+                                  ? 'bg-emerald-50 text-emerald-700 font-semibold group-hover:bg-emerald-100'
+                                  : 'bg-amber-50 text-amber-800 group-hover:bg-amber-100'
                               }`}
                             >
                               {isFeeSession ? `฿${session.amount_per_session}` : 'พบปะ'}

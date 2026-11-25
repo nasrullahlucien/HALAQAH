@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AppData, Member } from './types';
+import { AppData, Member, Session } from './types';
 import { initialMockData } from './data/mockData';
 import { fetchAllData } from './services/api';
 import { calculateGroupSummary } from './utils/calculations';
@@ -16,6 +16,7 @@ import { MembersView } from './components/MembersView';
 import { AdminPinModal } from './components/AdminPinModal';
 import { SettingsModal } from './components/SettingsModal';
 import { SessionModal } from './components/SessionModal';
+import { EditSessionModal } from './components/EditSessionModal';
 
 const ADMIN_PIN_SESSION_KEY = 'halaqah_admin_pin';
 
@@ -35,6 +36,7 @@ export const App: React.FC = () => {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [selectedSessionForEdit, setSelectedSessionForEdit] = useState<Session | null>(null);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
   // โหลดข้อมูลจาก Google Apps Script หรือ Local Cache
@@ -107,6 +109,7 @@ export const App: React.FC = () => {
               setActiveTab('members');
             }}
             onOpenSessionModal={() => setIsSessionModalOpen(true)}
+            onSelectSession={setSelectedSessionForEdit}
             isAdmin={isAdmin}
           />
         )}
@@ -128,6 +131,7 @@ export const App: React.FC = () => {
             adminPin={adminPin}
             onOpenAdminModal={() => setIsAdminModalOpen(true)}
             onOpenSessionModal={() => setIsSessionModalOpen(true)}
+            onSelectSession={setSelectedSessionForEdit}
             onRefreshData={loadData}
           />
         )}
@@ -184,6 +188,17 @@ export const App: React.FC = () => {
         adminPin={adminPin}
         defaultAmount={Number(data.config.default_amount_per_session) || 20}
         onClose={() => setIsSessionModalOpen(false)}
+        onOpenAdminModal={() => setIsAdminModalOpen(true)}
+        onRefreshData={loadData}
+      />
+
+      <EditSessionModal
+        isOpen={Boolean(selectedSessionForEdit)}
+        session={selectedSessionForEdit}
+        data={data}
+        isAdmin={isAdmin}
+        adminPin={adminPin}
+        onClose={() => setSelectedSessionForEdit(null)}
         onOpenAdminModal={() => setIsAdminModalOpen(true)}
         onRefreshData={loadData}
       />
